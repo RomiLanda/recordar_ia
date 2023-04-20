@@ -1,7 +1,15 @@
 # Folders
 
 /out_data/
+!/out_data/.gitkeep
 /input_data/
+!/input_data/.gitkeep
+/notebooks/01_ingest_labeled_data/iaxidentidad_json/
+!/notebooks/01_ingest_labeled_data/iaxidentidad_json/.gitkeep
+/notebooks/01_ingest_labeled_data/iaxidentidad_tif
+!/notebooks/01_ingest_labeled_data/iaxidentidad_tif/.gitkeep
+/notebooks/01_ingest_labeled_data/output_csv/
+!/notebooks/01_ingest_labeled_data/output_csv/.gitkeep
 
 # Old 
 src/__pycache__/
