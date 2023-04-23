@@ -4,9 +4,10 @@ import json
 import pandas as pd
 from shapely import LineString, Point, Polygon, box
 
-from .debug import doc_debug_labels
+from .debug import doc_debug
 from .ocr_boxes import apply_tesseract
 from .utils import get_label_tokens, image_unload
+from .create_graph import create_doc_graphs
 
 
 def load_image(img_path : str):
@@ -96,8 +97,9 @@ def create_data_block(INPUT_DATA, OUTPUT_DATA, debug = False):
             data_item = get_segments_from_annotations(data_item)
             data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
             data_item = get_label_tokens(data_item)
+            data_item = create_doc_graphs(data_item)
             if debug:
-                doc_debug_labels(data_item, OUTPUT_DATA)
+                doc_debug(data_item, OUTPUT_DATA)
             data_item = image_unload(data_item)
             data_block.append(data_item)
         
