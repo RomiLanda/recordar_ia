@@ -5,6 +5,7 @@ from itertools import groupby, chain
 from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
 from .utils import b64_encoder, save_json, cv2pil
+from shapely import LineString, Point, Polygon, box
 
 tess_configs = {
     "default": "--psm 11",
@@ -45,6 +46,7 @@ def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list
             "top": x[3],
             "left": x[2],
             "box": (x[2], x[3], x[2] + x[4], x[3] + x[5]),
+            "box_polygon": box(x[2], x[3], x[2] + x[4], x[3] + x[5]),
             "box_area": x[4] * x[5],
             "box_height": x[5],
             "x_position": x[2],
@@ -146,6 +148,6 @@ def apply_tesseract(
         path = Path(output_path)
         path.mkdir(parents=True, exist_ok=True)
         file_hash = b64_encoder(data_item["file_path"])
-        save_json(token_boxes, f"{output_path}/{file_hash}.json")
+        # save_json(token_boxes, f"{output_path}/{file_hash}.json") TODO Polygon not serializable
 
     return data_item
