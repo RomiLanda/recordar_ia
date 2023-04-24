@@ -22,18 +22,6 @@ def cv2pil(cv_image: np.ndarray) -> Image:
     pil_image = Image.fromarray(image)
     return pil_image
 
-
-def image_unload(data_item):
-    """Release image memory
-    Returns:
-        DataItem: data without loaded image
-    """
-    data_item = deepcopy(data_item)
-    data_item.pop("img_bitmap", None)
-
-    return data_item
-
-
 # -------- LABELS------------
 
 def get_label_token(polygon_token, data_item):
@@ -80,3 +68,5 @@ def get_boxes_ditance(box_1, box_2) -> float:
     box_2 = shapely_box(*box_2)
     ditance = box_1.distance(box_2)
     return ditance
+
+    
