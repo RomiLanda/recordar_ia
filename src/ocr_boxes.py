@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 from copy import deepcopy
-from itertools import groupby, chain
+from itertools import groupby
 from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
 from .utils import b64_encoder, save_json, cv2pil
-from shapely import LineString, Point, Polygon, box
+from shapely import box
 
 tess_configs = {
     "default": "--psm 11",

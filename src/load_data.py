@@ -2,11 +2,13 @@ import os
 import cv2
 import json
 import pandas as pd
-from shapely import LineString, Point, Polygon, box
+from shapely import box
+from copy import deepcopy
 
-from .debug import doc_debug_labels
+from .debug import doc_debugc
 from .ocr_boxes import apply_tesseract
-from .utils import get_label_tokens, image_unload
+from .utils import get_label_tokens
+from .create_graph import create_doc_graphs
 
 
 def load_image(img_path : str):
@@ -23,6 +25,17 @@ def load_image(img_path : str):
             "image_width" : imagen_cv.shape[1]
             }
         return data_item
+
+
+def image_unload(data_item):
+    """Release image memory
+    Returns:
+        DataItem: data without loaded image
+    """
+    data_item = deepcopy(data_item)
+    data_item.pop("img_bitmap", None)
+
+    return data_item
 
 
 class Caja(object):
@@ -90,14 +103,14 @@ def get_segments_from_annotations(data_item):
 def create_data_block(INPUT_DATA, OUTPUT_DATA, debug = False):
     data_block = []
     for filename in os.listdir(INPUT_DATA):
-        if filename.endswith(".tif"):
             file_path = f"{INPUT_DATA}{filename}"
             data_item = load_image(file_path)
             data_item = get_segments_from_annotations(data_item)
             data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
             data_item = get_label_tokens(data_item)
+            data_item = create_doc_graphs(data_item)
             if debug:
-                doc_debug_labels(data_item, OUTPUT_DATA)
+                doc_debug(data_item, OUTPUT_DATA)
             data_item = image_unload(data_item)
             data_block.append(data_item)
         

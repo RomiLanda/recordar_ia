@@ -3,7 +3,8 @@ import json
 import numpy as np
 from PIL import Image
 from copy import deepcopy
-from base64 import b64encode, b64decode
+from base64 import b64encode
+from shapely.geometry import box as shapely_box
 
 
 def b64_encoder(x: str) -> str:
@@ -21,17 +22,7 @@ def cv2pil(cv_image: np.ndarray) -> Image:
     pil_image = Image.fromarray(image)
     return pil_image
 
-
-def image_unload(data_item):
-    """Release image memory
-    Returns:
-        DataItem: data without loaded image
-    """
-    data_item = deepcopy(data_item)
-    data_item.pop("img_bitmap", None)
-
-    return data_item
-
+# -------- LABELS------------
 
 def get_label_token(polygon_token, data_item):
     label_candidates = {'etiqueta': -1, 'perc': -1, 'label': -1}
@@ -50,3 +41,32 @@ def get_label_tokens(data_item):
     for token_box in data_item['token_boxes']:
         token_box['label'] = get_label_token(token_box['box_polygon'],data_item)
     return data_item
+
+
+# -------- GEOMETRICS------------
+
+def get_boxes_line(box_1, box_2):
+    #  box => (x1, y1, x2, y2)
+    x1 = (box_1[0] + box_1[2]) / 2
+    y1 = (box_1[1] + box_1[3]) / 2
+
+    x2 = (box_2[0] + box_2[2]) / 2
+    y2 = (box_2[1] + box_2[3]) / 2
+
+    line = (x1, y1, x2, y2)
+    return line
+
+
+def get_line_center(line):
+    x = int(line[2] - (line[2] - line[0]) / 2)
+    y = int(line[3] - (line[3] - line[1]) / 2)
+    return x, y
+
+
+def get_boxes_ditance(box_1, box_2) -> float:
+    box_1 = shapely_box(*box_1)
+    box_2 = shapely_box(*box_2)
+    ditance = box_1.distance(box_2)
+    return ditance
+
+    
