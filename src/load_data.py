@@ -5,11 +5,17 @@ import pandas as pd
 from shapely import box
 from copy import deepcopy
 
-from .debug import doc_debugc
+from .debug import doc_debug
 from .ocr_boxes import apply_tesseract
 from .utils import get_label_tokens
 from .create_graph import create_doc_graphs
 
+# filtramos (usamos) las imagenes que tengan una cantidad de notas menor o igual a NEWS_QTY_TO_FILTER
+# por lo que si NEWS_QTY_TO_FILTER=3, vamos a quedarnos con las imagenes que tengan hasta 3 notas
+
+# con valor=1 usamos uni-nota - una imagen con una nota
+# con valor=99 usamos multi-nota (incluidas las uni-nota) - una imagen con mas de una nota
+NEWS_QTY_TO_FILTER = 1
 
 def load_image(img_path : str):
     """
@@ -60,42 +66,44 @@ class Caja(object):
         return pd.Series(self.__dict__)
 
 
-def get_segments_from_annotations(data_item):
+def get_annotations(json_path):
+    if json_path.endswith(".json"):
+        try:
+            with open(json_path, "r") as json_file:
+                return json.load(json_file)
+        except FileNotFoundError:
+            print(f'Archivo: {json_path} | Archivo no encontrado  | Estado ERROR!')
+
+    return {}
+
+
+def get_segments_from_annotations(data_item, annotations, json_path):
     """
     Extracts each segment of each article in the json file
     """    
-    json_path = data_item['file_path'].replace('.tif','.json')
     data_item['segments'] = []
+    if annotations is not None:
+        print(f"Diario: {annotations['Diario']}")
 
-    if json_path.endswith(".json"):
-        with open(json_path, "r") as json_file:
-            datos = json.load(json_file)
+        file_path = json_path.replace('.json', '.tif')
+        for segmento in ['Diario', 'Fecha']:
+            try:
+                caja = Caja(file_path, annotations[segmento]['bounding_box'], segmento, annotations[segmento]['texto'])
+                data_item['segments'].append(caja.to_json())
+                #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
+            except (ValueError, KeyError) as e:
+                print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR {str(e)}!')
 
-        print(datos['Diario'])
-
-        try:
-            caja = Caja(json_path.replace('.json', '.tif'), datos['Diario']['bounding_box'], 'Diario', datos['Diario']['texto'])
-            data_item['segments'].append(caja.to_json())
-            #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
-        except:
-            print(f'Archivo: {json_path} | Segmento: Diario  | Estado ERROR!')
-
-        try:
-            caja = Caja(json_path.replace('.json', '.tif'), datos['Fecha']['bounding_box'], 'Fecha', datos['Fecha']['texto'])
-            data_item['segments'].append(caja.to_json())
-            #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
-        except:
-            print(f'Archivo: {json_path} | Segmento: Fecha  | Estado ERROR!')
-
-        for nota in datos['Notas']:
+        for nota in annotations['Notas']:
             for segmento in nota:
-                for detalle in nota[segmento]:
-                    try:
-                        caja = Caja(json_path.replace('.json', '.tif'), detalle['bounding_box'], segmento, detalle['texto'])
-                        data_item['segments'].append(caja.to_json())
-                        #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
-                    except:
-                        print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR!')
+                if not isinstance(nota[segmento], bool) and nota[segmento]:
+                    for detalle in nota[segmento]:
+                        try:
+                            caja = Caja(file_path, detalle['bounding_box'], segmento, detalle['texto'])
+                            data_item['segments'].append(caja.to_json())
+                            #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
+                        except (ValueError, KeyError) as e:
+                            print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR {str(e)}!')
     
     return data_item
 
@@ -103,15 +111,19 @@ def get_segments_from_annotations(data_item):
 def create_data_block(INPUT_DATA, OUTPUT_DATA, debug = False):
     data_block = []
     for filename in os.listdir(INPUT_DATA):
-            file_path = f"{INPUT_DATA}{filename}"
+        file_path = f"{INPUT_DATA}{filename}"
+        json_path = file_path.replace('.tif','.json')
+        annotations = get_annotations(json_path)
+        if not NEWS_QTY_TO_FILTER or (annotations and len(annotations['Notas']) <= NEWS_QTY_TO_FILTER):
             data_item = load_image(file_path)
-            data_item = get_segments_from_annotations(data_item)
-            data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
-            data_item = get_label_tokens(data_item)
-            data_item = create_doc_graphs(data_item)
-            if debug:
-                doc_debug(data_item, OUTPUT_DATA)
-            data_item = image_unload(data_item)
-            data_block.append(data_item)
+            if data_item:
+                data_item = get_segments_from_annotations(data_item, annotations, json_path)
+                data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
+                data_item = get_label_tokens(data_item)
+                data_item = create_doc_graphs(data_item)
+                if debug:
+                    doc_debug(data_item, OUTPUT_DATA)
+                data_item = image_unload(data_item)
+                data_block.append(data_item)
         
     return data_block
