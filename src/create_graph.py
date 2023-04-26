@@ -5,7 +5,7 @@ from src.ocr_boxes import get_line_groups
 from more_itertools import flatten, windowed
 
 from .debug import doc_debug
-from .utils import get_line_center, get_boxes_ditance
+from .utils import get_boxes_ditance
 
 
 V_REL_WINDOW = 5

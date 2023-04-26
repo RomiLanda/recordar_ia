@@ -2,9 +2,10 @@ import os
 import cv2
 import json
 import pandas as pd
-from shapely import LineString, Point, Polygon, box
+from shapely import box
+from copy import deepcopy
 
-from .debug import doc_debug
+from .debug import doc_debugc
 from .ocr_boxes import apply_tesseract
 from .utils import get_label_tokens
 from .create_graph import create_doc_graphs

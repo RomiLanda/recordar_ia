@@ -3,7 +3,7 @@ import json
 import numpy as np
 from PIL import Image
 from copy import deepcopy
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from shapely.geometry import box as shapely_box
 
 
