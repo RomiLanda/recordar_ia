@@ -69,4 +69,11 @@ def get_boxes_ditance(box_1, box_2) -> float:
     ditance = box_1.distance(box_2)
     return ditance
 
-    
+
+def blank_filter(df_data):
+    """
+    Returns dataframe without elements with text NaN or empty from pytesseract data as dataframe
+    """   
+    mask_not_blank = (df_data['text'].str.strip() != '')
+    df_data = df_data[mask_not_blank].dropna(subset=['text'])
+    return df_data
