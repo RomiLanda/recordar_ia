@@ -52,10 +52,10 @@ class Caja(object):
         self.file = archivo
         self.x_1 = bounding_box['x']
         self.y_1 = bounding_box['y']
-        self.x_2 = bounding_box['x'] + bounding_box['w'] 
-        self.y_2 = bounding_box['y'] + bounding_box['h']
-        self.box = (bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['w'], bounding_box['y'] + bounding_box['h'])
-        self.polygon = box(bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['w'], bounding_box['y'] + bounding_box['h'])
+        self.x_2 = bounding_box['x'] + bounding_box['width'] 
+        self.y_2 = bounding_box['y'] + bounding_box['height']
+        self.box = (bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['width'], bounding_box['y'] + bounding_box['height'])
+        self.polygon = box(bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['width'], bounding_box['y'] + bounding_box['height'])
         self.content = contenido
         self.label = etiqueta
         
@@ -92,7 +92,7 @@ def get_segments_from_annotations(data_item, annotations, json_path):
                 data_item['segments'].append(caja.to_json())
                 #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
             except (ValueError, KeyError) as e:
-                print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR {str(e)}!')
+                print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR no key/value:{str(e)}!')
 
         for nota in annotations['Notas']:
             for segmento in nota:
@@ -103,7 +103,7 @@ def get_segments_from_annotations(data_item, annotations, json_path):
                             data_item['segments'].append(caja.to_json())
                             #print(f'Archivo: {caja.file} | Segmento: {segmento}  | Estado OK!')
                         except (ValueError, KeyError) as e:
-                            print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR {str(e)}!')
+                            print(f'Archivo: {json_path} | Segmento: {segmento}  | Estado ERROR no key/value: {str(e)}!')
     
     return data_item
 
