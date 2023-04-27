@@ -4,7 +4,7 @@ from copy import deepcopy
 from itertools import groupby
 from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
-from .utils import b64_encoder, save_json, cv2pil
+from .utils import b64_encoder, save_json, cv2pil, blank_filter
 from shapely import box
 
 tess_configs = {
@@ -59,6 +59,57 @@ def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list
 
     return token_boxes
 
+def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list[dict]:
+    tess_config = tess_configs.get(tesseract_config, "")
+    df_data = image_to_data(
+        image,
+        lang=tesseract_langs,
+        config=tess_config,
+        output_type=Output.DATAFRAME,
+    )
+    
+    df_data = blank_filter(df_data)
+    
+    df_data['x2'] = df_data['left'] + df_data['width']
+    df_data['y2'] = df_data['top'] + df_data['height']
+    df_data['id_line_group'] = df_data.apply(lambda row:
+                                                 'id_' + str(row['block_num']) +
+                                                 str(row['par_num']) +
+                                                 str(row['line_num']), axis=1
+                                            )
+    line_groups_ids = df_data['id_line_group'].value_counts().keys().to_list()
+
+    groups_boundaries = {}
+    for g in line_groups_ids:
+        group_boundaries = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
+        df_g = df_data[df_data.id_line_group == g]
+        group_boundaries['x1'] = df_g['left'].min()
+        group_boundaries['y1'] = df_g['top'].min()
+        group_boundaries['x2'] = df_g['x2'].max()
+        group_boundaries['y2'] = df_g['y2'].max()
+        groups_boundaries[g] = group_boundaries
+    
+    token_line_groups_boxes = map(
+        lambda x: {
+            "top": groups_boundaries[x]['y1'],
+            "left": groups_boundaries[x]['x1'],
+            "box": (groups_boundaries[x]['x1'],
+                    groups_boundaries[x]['y1'],
+                    groups_boundaries[x]['x2'],
+                    groups_boundaries[x]['y2']),
+            "box_polygon": box(groups_boundaries[x]['x1'],
+                               groups_boundaries[x]['y1'],
+                               groups_boundaries[x]['x2'],
+                               groups_boundaries[x]['y2']),
+            "box_area": groups_boundaries[x]['x1'] * groups_boundaries[x]['y1'],
+            "box_height": groups_boundaries[x]['y2'] - groups_boundaries[x]['y1'],
+            "x_position": groups_boundaries[x]['x1'],
+            "y_position": groups_boundaries[x]['y1'],
+        },
+            groups_boundaries
+    )
+
+    return token_line_groups_boxes
 
 MIN_NEW_LINE_OVERLAP = 0.5
 
