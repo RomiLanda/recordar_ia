@@ -7,6 +7,7 @@ from pytesseract import image_to_data, Output
 from .utils import b64_encoder, save_json, cv2pil
 from shapely import box
 from statistics import mode
+import re
 
 tess_configs = {
     "default": "--psm 11",
