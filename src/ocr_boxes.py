@@ -6,6 +6,7 @@ from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
 from .utils import b64_encoder, save_json, cv2pil
 from shapely import box
+from statistics import mode
 
 tess_configs = {
     "default": "--psm 11",
@@ -37,7 +38,9 @@ def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list
         data["width"],
         data["height"],
     )
-
+    
+    mode_height = mode(data["height"])
+    
     # box format =>  (x_left, y_top, x_right, y_bottom)
     token_boxes = map(
         lambda x: {
@@ -51,6 +54,9 @@ def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list
             "box_height": x[5],
             "x_position": x[2],
             "y_position": x[3],
+            "number_presence": True if len(re.findall(r"\d", x[0])) > 0 else False,
+            "caps_words_ratio": len(re.findall(r"\b[A-Z][a-z]*", x[0]))/len(x[0].split()) if len(x[0].split()) > 0 else 0.,
+            "mode_normalized_height": x[5] / mode_height if mode_height > 0 else 0.,
         },
         data,
     )
