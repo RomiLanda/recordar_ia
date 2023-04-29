@@ -25,7 +25,7 @@ def cv2pil(cv_image: np.ndarray) -> Image:
 # -------- LABELS------------
 
 def get_label_token(polygon_token, data_item):
-    label_candidates = {'etiqueta': -1, 'perc': -1, 'label': -1}
+    label_candidates = {'etiqueta': -1, 'perc': -1, 'label': 'Indefinido'}
     i=0
     for segmento in data_item['segments']:
         if polygon_token.intersects(segmento['polygon']):
