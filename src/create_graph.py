@@ -12,82 +12,116 @@ V_REL_WINDOW = 5
 MAX_V_WEIGHT = 0.25
 
 
-def get_v_rels(token_boxes: list[dict], image_height: int):
-    line_groups = get_line_groups(token_boxes)
-    line_groups = list(line_groups)
+# def get_v_rels(token_boxes: list[dict], image_height: int):
+#     line_groups = get_line_groups(token_boxes)
+#     line_groups = list(line_groups)
 
-    for idx, line_group in enumerate(line_groups):
-        for top_token in line_group:
-            top_box = top_token["box"]
+#     for idx, line_group in enumerate(line_groups):
+#         for top_token in line_group:
+#             top_box = top_token["box"]
 
-            bottom_idx_start = idx + 1
-            bottom_tokens = flatten(line_groups[bottom_idx_start:])
-            candidate_bottom_tokens = []
-            for bottom_token in bottom_tokens:
-                bottom_box = bottom_token["box"]
+#             bottom_idx_start = idx + 1
+#             bottom_tokens = flatten(line_groups[bottom_idx_start:])
+#             candidate_bottom_tokens = []
+#             for bottom_token in bottom_tokens:
+#                 bottom_box = bottom_token["box"]
 
-                top_x_range = range(top_box[0], top_box[2] + 1)
-                bottom_x_range = range(bottom_box[0], bottom_box[2] + 1)
+#                 top_x_range = range(top_box[0], top_box[2] + 1)
+#                 bottom_x_range = range(bottom_box[0], bottom_box[2] + 1)
 
-                if not set(top_x_range).intersection(set(bottom_x_range)):
-                    continue
+#                 if not set(top_x_range).intersection(set(bottom_x_range)):
+#                     continue
 
-                candidate_box = {
-                    "n_line": bottom_token["n_line"],
-                    "bottom_token": bottom_token,
-                }
+#                 candidate_box = {
+#                     "n_line": bottom_token["n_line"],
+#                     "bottom_token": bottom_token,
+#                 }
 
-                candidate_bottom_tokens.append(candidate_box)
+#                 candidate_bottom_tokens.append(candidate_box)
 
-            if not candidate_bottom_tokens:
-                continue
+#             if not candidate_bottom_tokens:
+#                 continue
 
-            min_line = min(map(lambda x: x["n_line"], candidate_bottom_tokens))
-            if (min_line - top_token["n_line"]) > V_REL_WINDOW:
-                continue
+#             min_line = min(map(lambda x: x["n_line"], candidate_bottom_tokens))
+#             if (min_line - top_token["n_line"]) > V_REL_WINDOW:
+#                 continue
 
-            valid_bottom_tokens = filter(
-                lambda x: x["n_line"] == min_line, candidate_bottom_tokens
-            )
+#             valid_bottom_tokens = filter(
+#                 lambda x: x["n_line"] == min_line, candidate_bottom_tokens
+#             )
 
-            valid_bottom_tokens = map(
-                lambda x: x["bottom_token"], valid_bottom_tokens
-            )
+#             valid_bottom_tokens = map(
+#                 lambda x: x["bottom_token"], valid_bottom_tokens
+#             )
 
-            for valid_bottom_token in valid_bottom_tokens:
-                bottom_box = valid_bottom_token["box"]
-                boxes_ditance = get_boxes_ditance(top_box, bottom_box)
-                if not boxes_ditance:
-                    continue
+#             for valid_bottom_token in valid_bottom_tokens:
+#                 bottom_box = valid_bottom_token["box"]
+#                 boxes_ditance = get_boxes_ditance(top_box, bottom_box)
+#                 if not boxes_ditance:
+#                     continue
                     
-                if (boxes_ditance / image_height) > MAX_V_WEIGHT:
-                    continue
+#                 if (boxes_ditance / image_height) > MAX_V_WEIGHT:
+#                     continue
 
-                rel = (
-                    top_token["id"],
-                    valid_bottom_token["id"],
-                    boxes_ditance,
-                )
+#                 rel = (
+#                     top_token["id"],
+#                     valid_bottom_token["id"],
+#                     boxes_ditance,
+#                 )
 
-                yield rel
+#                 yield rel
 
 
-def get_h_rels(token_boxes: list[dict]):
-    line_groups = get_line_groups(token_boxes)
-    for tokens in line_groups:
-        for left_token, rigth_token in windowed(tokens, 2):
+# def get_h_rels(token_boxes: list[dict]):
+#     line_groups = get_line_groups(token_boxes)
+#     for tokens in line_groups:
+#         for left_token, rigth_token in windowed(tokens, 2):
 
-            if not left_token or not rigth_token:
-                continue
+#             if not left_token or not rigth_token:
+#                 continue
 
-            left_box = left_token["box"]
-            rigth_box = rigth_token["box"]
-            boxes_ditance = get_boxes_ditance(left_box, rigth_box)
-            if not boxes_ditance:
-                continue
+#             left_box = left_token["box"]
+#             rigth_box = rigth_token["box"]
+#             boxes_ditance = get_boxes_ditance(left_box, rigth_box)
+#             if not boxes_ditance:
+#                 continue
 
-            rel = (left_token["id"], rigth_token["id"], boxes_ditance)
-            yield rel
+#             rel = (left_token["id"], rigth_token["id"], boxes_ditance)
+#             yield rel
+
+
+from shapely.strtree import STRtree
+from shapely import distance, box
+
+
+def box_buffer(box_polygon, scale=(0,0)):
+    """
+    Scale = (0,0) returns box without any buffer.
+    """
+    x1, y1, x2, y2 = box_polygon.bounds
+    x_scale, y_scale = scale
+    box_buffered = box(x1-((x_scale(x2-x1))/2), y1-((y_scale(y2-y1))/2), x2+((x_scale(x2-x1))/2), y2+((y_scale(y2-y1))/2))
+    return box_buffered
+
+
+def get_intersections(data_item, dilate_scale=(0,0)):
+    all_boxes = [(box['box_polygon'], box['n_token']) for box in data_item['token_boxes']]
+    
+    edges_i = []
+    for box in all_boxes:
+        tree = STRtree(all_boxes[0])
+        for i, p in enumerate(all_boxes[0]):
+            intersections = tree.query(box_buffer(p, dilate_scale), predicate='intersects')
+            intersections = intersections[intersections != i]
+            for i_p in intersections:
+                edges_i.append(tuple(sorted((i,i_p)), p.distance(all_boxes[0][i_p])))
+
+    edges_i = set(edges_i)
+
+    for a, b, w in edges_i:
+        edges_hash = (all_boxes[1][a], all_boxes[1][b], w)
+
+    return edges_hash
 
 
 def create_doc_graphs(
@@ -97,13 +131,15 @@ def create_doc_graphs(
 ):
 
     data_item = deepcopy(data_item)
-    image_height = data_item["image_shape"]["image_height"]
+    # image_height = data_item["image_shape"]["image_height"]
     token_boxes = data_item["token_boxes"]
 
     nodes = (token_box["id"] for token_box in token_boxes)
-    v_rels = get_v_rels(token_boxes, image_height)
-    h_rels = get_h_rels(token_boxes)
-    rels = list(chain(v_rels, h_rels))
+    # v_rels = get_v_rels(token_boxes, image_height)
+    # h_rels = get_h_rels(token_boxes)
+    # rels = list(chain(v_rels, h_rels))
+    rels = get_intersections(data_item, dilate_scale=(0.2, 0.5))
+
 
     min_weight = min(weight for *_, weight in rels)
     rels = ((src, tgt, min_weight / weight) for src, tgt, weight in rels)
