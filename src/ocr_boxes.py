@@ -14,10 +14,11 @@ tess_configs = {
     "psm5": "--psm 5",
     "psm6": "--psm 6",
     "psm12": "--psm 12",
+    "with_whitelist": r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;()"',
 }
 
 TESSERACT_LANG = "spa"
-TESSERACT_CONFIG = "default"
+TESSERACT_CONFIG = "with_whitelist"
 
 
 def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list[dict]:
