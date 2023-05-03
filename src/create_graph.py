@@ -91,7 +91,7 @@ MAX_V_WEIGHT = 0.25
 
 
 from shapely.strtree import STRtree
-from shapely import distance, box
+from shapely import distance, box, centroid
 
 
 def box_buffer(box_polygon, scale=(0,0)):
@@ -100,26 +100,25 @@ def box_buffer(box_polygon, scale=(0,0)):
     """
     x1, y1, x2, y2 = box_polygon.bounds
     x_scale, y_scale = scale
-    box_buffered = box(x1-((x_scale(x2-x1))/2), y1-((y_scale(y2-y1))/2), x2+((x_scale(x2-x1))/2), y2+((y_scale(y2-y1))/2))
+    box_buffered = box(x1-((x_scale*(x2-x1))/2), y1-((y_scale*(y2-y1))/2), x2+((x_scale*(x2-x1))/2), y2+((y_scale*(y2-y1))/2))
     return box_buffered
 
 
 def get_intersections(data_item, dilate_scale=(0,0)):
-    all_boxes = [(box['box_polygon'], box['n_token']) for box in data_item['token_boxes']]
-    
+    all_boxes = [box['box_polygon'] for box in data_item['token_boxes']]
+    all_ids = [box['id'] for box in data_item['token_boxes']]
+    tree = STRtree(all_boxes)
     edges_i = []
-    for box in all_boxes:
-        tree = STRtree(all_boxes[0])
-        for i, p in enumerate(all_boxes[0]):
-            intersections = tree.query(box_buffer(p, dilate_scale), predicate='intersects')
-            intersections = intersections[intersections != i]
-            for i_p in intersections:
-                edges_i.append(tuple(sorted((i,i_p)), p.distance(all_boxes[0][i_p])))
+    for i, p in enumerate(all_boxes):
+        intersections = tree.query(box_buffer(p, dilate_scale), predicate='intersects')
+        intersections = intersections[intersections != i]
+        for i_p in intersections:
+            edges_i.append((i, i_p, distance(centroid(p), centroid(all_boxes[i_p]))))
 
-    edges_i = set(edges_i)
-
+    #edges_i = set(edges_i)
+    edges_hash = []
     for a, b, w in edges_i:
-        edges_hash = (all_boxes[1][a], all_boxes[1][b], w)
+        edges_hash.append((all_ids[a], all_ids[b], w))
 
     return edges_hash
 
@@ -129,7 +128,7 @@ def create_doc_graphs(
     debug: bool = False,
     bidirectional: bool = True,
 ):
-
+    
     data_item = deepcopy(data_item)
     # image_height = data_item["image_shape"]["image_height"]
     token_boxes = data_item["token_boxes"]
@@ -139,7 +138,6 @@ def create_doc_graphs(
     # h_rels = get_h_rels(token_boxes)
     # rels = list(chain(v_rels, h_rels))
     rels = get_intersections(data_item, dilate_scale=(0.2, 0.5))
-
 
     min_weight = min(weight for *_, weight in rels)
     rels = ((src, tgt, min_weight / weight) for src, tgt, weight in rels)
