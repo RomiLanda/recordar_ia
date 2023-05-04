@@ -4,6 +4,9 @@
 !/out_data/.gitkeep
 /input_data/
 !/input_data/.gitkeep
+/toda_la_data/
+!/toda_la_data/.gitkeep
+
 /notebooks/01_ingest_labeled_data/iaxidentidad_json/
 !/notebooks/01_ingest_labeled_data/iaxidentidad_json/.gitkeep
 /notebooks/01_ingest_labeled_data/iaxidentidad_tif
