@@ -9,6 +9,7 @@ from .debug import doc_debug
 from .ocr_boxes import apply_tesseract
 from .utils import get_label_tokens
 from .create_graph import create_doc_graphs
+from .add_features import add_features
 
 # filtramos (usamos) las imagenes que tengan una cantidad de notas menor o igual a NEWS_QTY_TO_FILTER
 # por lo que si NEWS_QTY_TO_FILTER=3, vamos a quedarnos con las imagenes que tengan hasta 3 notas
@@ -177,6 +178,7 @@ def create_data_block(INPUT_DATA, OUTPUT_DATA, debug = False):
             if data_item:
                 data_item = get_segments_from_annotations(data_item, annotations, json_path)
                 data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
+                data_item = add_features(data_item)
                 data_item = get_label_tokens(data_item)
                 data_item = create_doc_graphs(data_item)
                 if debug:
