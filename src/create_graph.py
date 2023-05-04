@@ -92,6 +92,7 @@ MAX_V_WEIGHT = 0.25
 
 from shapely.strtree import STRtree
 from shapely import distance, box, centroid
+import numpy as np
 
 
 def box_buffer(box_polygon, scale=(0,0)):
@@ -112,6 +113,8 @@ def get_intersections(data_item, dilate_scale=(0,0)):
     for i, p in enumerate(all_boxes):
         intersections = tree.query(box_buffer(p, dilate_scale), predicate='intersects')
         intersections = intersections[intersections != i]
+        if len(intersections) == 0:
+            intersections = np.append(intersections, tree.query_nearest(p, exclusive=True))
         for i_p in intersections:
             edges_i.append((i, i_p, distance(centroid(p), centroid(all_boxes[i_p]))))
 
@@ -137,7 +140,7 @@ def create_doc_graphs(
     # v_rels = get_v_rels(token_boxes, image_height)
     # h_rels = get_h_rels(token_boxes)
     # rels = list(chain(v_rels, h_rels))
-    rels = get_intersections(data_item, dilate_scale=(0.2, 0.5))
+    rels = get_intersections(data_item, dilate_scale=(0.4, 1))
 
     min_weight = min(weight for *_, weight in rels)
     rels = ((src, tgt, min_weight / weight) for src, tgt, weight in rels)

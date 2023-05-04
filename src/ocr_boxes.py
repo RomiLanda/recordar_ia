@@ -69,6 +69,10 @@ def blank_filter(df_data):
     df_data = df_data[mask_not_blank].dropna(subset=['text'])
     return df_data
 
+def vertical_filter(df_data):
+    """Returns dataframe without elements with abnormal proportion from pytesseract data as dataframe"""
+    mask_not_vertical = (df_data['height'] < (df_data['width'] * 2.5))
+    return df_data[mask_not_vertical]
 
 def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list[dict]:
     tess_config = tess_configs.get(tesseract_config, "")
@@ -80,6 +84,7 @@ def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: st
     )
 
     df_data = blank_filter(df_data)
+    df_data = vertical_filter(df_data)
 
     df_data['x2'] = df_data['left'] + df_data['width']
     df_data['y2'] = df_data['top'] + df_data['height']
