@@ -30,7 +30,7 @@ def doc_debug(data_item, out_path):
         n_line = token_box["n_line"]
         label = token_box["label"]
 
-        color = "red" if label != -1 else "black"
+        color = "red" if label != "Indefinido" else "black"
         draw.rectangle(box, outline=color, width=1)
         draw.text(
             (box[0], box[1]),
