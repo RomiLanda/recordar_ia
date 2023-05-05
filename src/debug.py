@@ -21,13 +21,13 @@ def doc_debug(data_item, out_path):
     token_boxes = data_item["token_boxes"]
 
     boxes_map = {
-        token_box["id"]: token_box["box"] for token_box in token_boxes
+        token_box["id_line_group"]: token_box["box"] for token_box in token_boxes
     }
 
     draw = ImageDraw.Draw(image)
     for token_box in token_boxes:
         box = token_box["box"]
-        n_line = token_box["n_line"]
+        n_line = token_box["id_line_group"]
         label = token_box["label"]
 
         color = "red" if label != "Indefinido" else "black"

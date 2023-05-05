@@ -69,4 +69,20 @@ def get_boxes_ditance(box_1, box_2) -> float:
     ditance = box_1.distance(box_2)
     return ditance
 
-    
+
+# -------- Filters------------
+
+
+def blank_filter(df_data):
+    """
+    Returns dataframe without elements with text NaN or empty from pytesseract data as dataframe
+    """   
+    mask_not_blank = (df_data['text'].str.strip() != '')
+    df_data = df_data[mask_not_blank].dropna(subset=['text'])
+    return df_data
+
+
+def vertical_filter(df_data):
+    """Returns dataframe without elements with abnormal proportion from pytesseract data as dataframe"""
+    mask_not_vertical = (df_data['height'] < (df_data['width'] * 2.5))
+    return df_data[mask_not_vertical]
