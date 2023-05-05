@@ -60,21 +60,24 @@ def normalize_positions(data_item):
 def create_categories(data_item, attribute: str, bins=10):
     all_boxes_values = []
     for box in data_item['token_boxes']:
-        all_boxes_values.append(box[attribute])
+        if box['id_line_group'] != 'FOTOGRAFÍA':
+            all_boxes_values.append(box[attribute])
     return pd.cut(all_boxes_values, bins=bins, labels=range(bins))
 
 
 def get_width_category(data_item):
     width_categories = create_categories(data_item, attribute='box_width', bins=10)
     for i, box in enumerate(data_item['token_boxes']):
-        box['width_category'] = width_categories[i] / 10
+        if box['id_line_group'] != 'FOTOGRAFÍA': 
+            box['width_category'] = width_categories[i] / 10
     return data_item
 
 
 def get_height_category(data_item):
     height_categories = create_categories(data_item, attribute='box_height', bins=7)
     for i, box in enumerate(data_item['token_boxes']):
-        box['height_category'] = height_categories[i] / 7
+        if box['id_line_group'] != 'FOTOGRAFÍA':
+            box['height_category'] = height_categories[i] / 7
     return data_item
 
 

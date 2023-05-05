@@ -6,6 +6,7 @@ from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
 from .utils import b64_encoder, cv2pil, blank_filter, vertical_filter  
 from shapely import box
+from .get_photos import add_photo_token_boxes, get_photo_polygons
 
 tess_configs = {
     "default": "--psm 11",
@@ -19,6 +20,7 @@ tess_configs = {
 
 TESSERACT_LANG = "spa"
 TESSERACT_CONFIG = "with_whitelist"
+BUFFER_RATIO = 1.8
 
 
 def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
@@ -102,6 +104,8 @@ def apply_tesseract(
     df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
     
     token_boxes = get_line_group_token_boxes(df_data)
+    photo_boxes = get_photo_polygons(image=img, df_data=df_data, buffer_ratio=BUFFER_RATIO)
+    token_boxes = add_photo_token_boxes(token_boxes, photo_boxes)
 
     data_item["token_boxes"] = token_boxes
 
