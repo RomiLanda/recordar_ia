@@ -3,6 +3,7 @@ import dateparser
 import re
 import pandas as pd
 
+
 def media_height(data_item):
     total_height = []
     for box in data_item['token_boxes']:

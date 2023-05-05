@@ -4,7 +4,7 @@ from copy import deepcopy
 from itertools import groupby
 from more_itertools import windowed, flatten
 from pytesseract import image_to_data, Output
-from .utils import b64_encoder, save_json, cv2pil
+from .utils import b64_encoder, cv2pil, blank_filter, vertical_filter  
 from shapely import box
 
 tess_configs = {
@@ -21,60 +21,7 @@ TESSERACT_LANG = "spa"
 TESSERACT_CONFIG = "with_whitelist"
 
 
-def get_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list[dict]:
-    tess_config = tess_configs.get(tesseract_config, "")
-    data = image_to_data(
-        image,
-        lang=tesseract_langs,
-        config=tess_config,
-        output_type=Output.DICT,
-    )
-
-    data = zip(
-        data["text"],
-        data["conf"],
-        data["left"],
-        data["top"],
-        data["width"],
-        data["height"],
-    )
-
-    # box format =>  (x_left, y_top, x_right, y_bottom)
-    token_boxes = map(
-        lambda x: {
-            "text": x[0],
-            "confidence": float(x[1]) / 100,
-            "top": x[3],
-            "left": x[2],
-            "box": (x[2], x[3], x[2] + x[4], x[3] + x[5]),
-            "box_polygon": box(x[2], x[3], x[2] + x[4], x[3] + x[5]),
-            "box_area": x[4] * x[5],
-            "box_height": x[5],
-            "x_position": x[2],
-            "y_position": x[3],
-        },
-        data,
-    )
-
-    token_boxes = [token for token in token_boxes if token["text"]]
-
-    return token_boxes
-
-
-def blank_filter(df_data):
-    """
-    Returns dataframe without elements with text NaN or empty from pytesseract data as dataframe
-    """   
-    mask_not_blank = (df_data['text'].str.strip() != '')
-    df_data = df_data[mask_not_blank].dropna(subset=['text'])
-    return df_data
-
-def vertical_filter(df_data):
-    """Returns dataframe without elements with abnormal proportion from pytesseract data as dataframe"""
-    mask_not_vertical = (df_data['height'] < (df_data['width'] * 2.5))
-    return df_data[mask_not_vertical]
-
-def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: str ) -> list[dict]:
+def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
     tess_config = tess_configs.get(tesseract_config, "")
     df_data = image_to_data(
         image,
@@ -82,15 +29,18 @@ def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: st
         config=tess_config,
         output_type=Output.DATAFRAME,
     )
-
     df_data = blank_filter(df_data)
     df_data = vertical_filter(df_data)
+    
+    return df_data
 
+
+def get_line_group_token_boxes(df_data) -> list[dict]:
     df_data['x2'] = df_data['left'] + df_data['width']
     df_data['y2'] = df_data['top'] + df_data['height']
     df_data['id_line_group'] = df_data.apply(lambda row:
-                                                 'id_' + str(row['block_num']) +
-                                                 str(row['par_num']) +
+                                                 'id_' + str(row['block_num']) + '_' +
+                                                 str(row['par_num']) + '_' +
                                                  str(row['line_num']), axis=1
                                             )
     line_groups_ids = df_data['id_line_group'].value_counts().keys().to_list()
@@ -129,7 +79,7 @@ def get_line_group_token_boxes(image, tesseract_langs: str, tesseract_config: st
             groups_boundaries
     )
 
-    return token_line_groups_boxes
+    return list(token_line_groups_boxes)
 
 
 MIN_NEW_LINE_OVERLAP = 0.15
@@ -202,13 +152,15 @@ def apply_tesseract(
     image_path = data_item["file_path"]
     filename = os.path.basename(image_path)
     image_id = f"{filename}"
+    df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
+    
+    token_boxes = get_line_group_token_boxes(df_data)
 
-    token_boxes = get_line_group_token_boxes(image, tesseract_langs, tesseract_config)
-    token_boxes = set_line_number(token_boxes)
-    token_boxes = set_token_box_ids(
-        token_boxes,
-        image_id,
-    )
+    # token_boxes = set_line_number(token_boxes)
+    # token_boxes = set_token_box_ids(
+    #     token_boxes,
+    #     image_id,
+    # )
 
     if not token_boxes:
         logger.warning(f"WARNING no boxes for image => {image_path}")
