@@ -57,11 +57,11 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
 
     polygons = [p for p in polygons if (round((p.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC - 10))]
 
-    polygons = unary_union(polygons)
+    if len(polygons) > 1:
+        polygons = unary_union(polygons)
+        polygons = [p for p in list(polygons.geoms) if (round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < MAX_PHOTO_AREA_PERC)]
 
-    photo_poly_candidates = [p for p in list(polygons.geoms) if (round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < MAX_PHOTO_AREA_PERC)]
-
-    photo_poly_candidates = clear_abnormal_ratio_photos(photo_poly_candidates)
+    photo_poly_candidates = clear_abnormal_ratio_photos(polygons)
 
     return photo_poly_candidates
 

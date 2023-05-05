@@ -70,6 +70,8 @@ def get_width_category(data_item):
     for i, box in enumerate(data_item['token_boxes']):
         if box['id_line_group'] != 'FOTOGRAFÍA': 
             box['width_category'] = width_categories[i] / 10
+        else:
+            box['width_category'] = 1
     return data_item
 
 
@@ -78,6 +80,8 @@ def get_height_category(data_item):
     for i, box in enumerate(data_item['token_boxes']):
         if box['id_line_group'] != 'FOTOGRAFÍA':
             box['height_category'] = height_categories[i] / 7
+        else:
+            box['height_category'] = 1
     return data_item
 
 
