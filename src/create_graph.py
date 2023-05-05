@@ -20,7 +20,7 @@ def box_buffer(box_polygon, scale=(0,0)):
 
 def get_intersections(data_item, dilate_scale=(0,0)):
     all_boxes = [box['box_polygon'] for box in data_item['token_boxes']]
-    all_ids = [box['id'] for box in data_item['token_boxes']]
+    all_ids = [box['id_line_group'] for box in data_item['token_boxes']]
     tree = STRtree(all_boxes)
     edges_i = []
     for i, p in enumerate(all_boxes):
@@ -47,7 +47,7 @@ def create_doc_graphs(
     data_item = deepcopy(data_item)
     token_boxes = data_item["token_boxes"]
 
-    nodes = (token_box["id"] for token_box in token_boxes)
+    nodes = (token_box["id_line_group"] for token_box in token_boxes)
     rels = get_intersections(data_item, dilate_scale=(0.4, 1))
 
     min_weight = min(weight for *_, weight in rels)

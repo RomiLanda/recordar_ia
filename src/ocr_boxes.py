@@ -54,6 +54,7 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
         group_boundaries['x2'] = df_g['x2'].max()
         group_boundaries['y2'] = df_g['y2'].max()
         group_boundaries['text'] = " ".join(df_g['text'])
+        group_boundaries['id_line_group'] = g
         groups_boundaries[g] = group_boundaries
 
     token_line_groups_boxes = map(
@@ -73,68 +74,14 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
             "box_width" : groups_boundaries[x]['x2'] - groups_boundaries[x]['x1'],
             "x_position": groups_boundaries[x]['x1'],
             "y_position": groups_boundaries[x]['y1'],
-            "text": groups_boundaries[x]['text']
+            "text": groups_boundaries[x]['text'],
+            "id_line_group": groups_boundaries[x]['id_line_group']
             
         },
             groups_boundaries
     )
 
     return list(token_line_groups_boxes)
-
-
-MIN_NEW_LINE_OVERLAP = 0.15
-
-def set_line_number(token_boxes: list[dict]) -> list[dict]:
-    token_boxes = sorted(
-        token_boxes, key=lambda x: ((x["box"][3] + x["box"][1]) / 2)
-    )
-
-    token_box_pairs = windowed(token_boxes, 2)
-    line = 1
-    token_boxes[0]["n_line"] = line
-    for prev_token_box, token_box in token_box_pairs:
-        prev_box = prev_token_box["box"]
-        box = token_box["box"]
-        prev_y = (prev_box[3] + prev_box[1]) / 2
-        y = (box[3] + box[1]) / 2
-        diff = abs(y - prev_y)
-        if (box[1] > prev_box[1]) and (box[3] < prev_box[3]):
-            token_box["n_line"] = line
-            continue
-
-        height = token_box["box_height"]
-        if diff >= height * MIN_NEW_LINE_OVERLAP:
-            line += 1
-
-        token_box["n_line"] = line
-
-    return token_boxes
-
-
-def get_line_groups(token_boxes: list[dict]):
-    line_groups = groupby(token_boxes, key=lambda x: x["n_line"])
-    line_groups = map(
-        lambda x: sorted(x[1], key=lambda x: x["box"][0]), line_groups
-    )
-
-    return line_groups
-
-
-def set_token_box_ids(
-    token_boxes: list[dict[str]],
-    image_id: str,
-) -> list[dict[str]]:
-
-    line_groups = get_line_groups(token_boxes)
-    sorted_token_boxes = flatten(line_groups)
-    token_boxes_ = []
-    for idx, token_box in enumerate(sorted_token_boxes, start=1):
-        token_id = f"{image_id}-{idx}"
-        token_id = b64_encoder(token_id)
-        token_box_ = {"id": token_id, **token_box, "n_token": idx}
-        token_boxes_.append(token_box_)
-
-    return token_boxes_
 
 
 def apply_tesseract(
@@ -155,16 +102,6 @@ def apply_tesseract(
     df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
     
     token_boxes = get_line_group_token_boxes(df_data)
-
-    # token_boxes = set_line_number(token_boxes)
-    # token_boxes = set_token_box_ids(
-    #     token_boxes,
-    #     image_id,
-    # )
-
-    if not token_boxes:
-        logger.warning(f"WARNING no boxes for image => {image_path}")
-        return
 
     data_item["token_boxes"] = token_boxes
 
