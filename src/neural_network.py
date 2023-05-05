@@ -155,6 +155,25 @@ def show_predictions(predict_data_block):
     print(classification_report(y_true, y_pred))
 
 
+def unify_text_by_label(predict_data_block):
+    import pdb; pdb.set_trace()
+    notes = []
+    # usar id_line_group, text, pred_label
+    for data_block in predict_data_block:
+        new_note = {}
+        token_boxes = data_block['token_boxes']
+        last_label = None
+        content = ""
+        for token_box in token_boxes:
+            token_box['id_line_group'].split("_")
+            # if token_box['pred_label'] == last_label:
+            #     content = content + token_box['text']
+            # else:
+            print(token_box['pred_label'])
+            print(token_box['text'])
+        notes.append(new_note)
+
+
 def process(data_block, use_existing_model=True):
     train, val, test = split_dataset(data_block)
     label_map, inv_label_map = set_label_map(data_block)
@@ -162,3 +181,4 @@ def process(data_block, use_existing_model=True):
     model, trainer = train_model(label_map, train, val, test, use_existing_model)
     predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
     show_predictions(predict_data_block)
+    unify_text_by_label(predict_data_block)
