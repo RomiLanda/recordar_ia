@@ -56,11 +56,12 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
         polygons.append(box(x_min, y_min, x_max, y_max))
 
     polygons = [p for p in polygons if (round((p.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC - 10))]
-
+    
     if len(polygons) > 1:
         polygons = unary_union(polygons)
         polygons = [p for p in list(polygons.geoms) if (round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < MAX_PHOTO_AREA_PERC)]
 
+    polygons = [box(*p.bounds) for p in polygons]
     photo_poly_candidates = clear_abnormal_ratio_photos(polygons)
 
     return photo_poly_candidates
@@ -75,25 +76,37 @@ def is_outside(polygon, photo_boxes):
 def add_photo_token_boxes(token_boxes, photo_boxes):
 
     if len(photo_boxes) > 0:
-        token_boxes = map(lambda x: x, filter(lambda x: is_outside, token_boxes))
-        
+        print('TOKEN_BOXES LENGHT: ', len(token_boxes))
+        print('PHOTO_BOXES LENGHT: ', len(photo_boxes))
+        for ph_box in photo_boxes:
+            for token in token_boxes:
+                if token['id_line_group'] != 'id_7_1_1':
+                    print('Resistente -->', token['id_line_group'])
+                if ph_box.contains(token['box_polygon']):
+                    print('Borrando -->', token['box_polygon'])
+                    token_boxes.remove(token)
+
+        #token_boxes = map(lambda x: x, filter(lambda x: is_outside(x, photo_boxes), token_boxes))
+        print('TOKEN_BOXES LENGHT_AFTER_CLEAN: ', len(token_boxes))
+        token_boxes = map(lambda x: x, token_boxes)
+
         token_photo_boxes = map(
             lambda x: {
-                "top": int(x.bounds[1]),
-                "left": int(x.bounds[0]),
-                "box": list(map(int, x.bounds)),
-                "box_polygon": x,
-                "box_area": int(x.area),
-                "box_height": int(x.bounds[3] - x.bounds[1]),
-                "box_width": int(x.bounds[2] - x.bounds[0]),
-                "x_position": int(x.bounds[0]),
-                "y_position": int(x.bounds[1]),
+                "top": int(x[1].bounds[1]),
+                "left": int(x[1].bounds[0]),
+                "box": list(map(int, x[1].bounds)),
+                "box_polygon": x[1],
+                "box_area": int(x[1].area),
+                "box_height": int(x[1].bounds[3] - x[1].bounds[1]),
+                "box_width": int(x[1].bounds[2] - x[1].bounds[0]),
+                "x_position": int(x[1].bounds[0]),
+                "y_position": int(x[1].bounds[1]),
                 "text": 'FOTOGRAFÍA',
-                "id_line_group": 'FOTOGRAFÍA'
+                "id_line_group": 'id_photo_' + str(x[0])
             },
-                photo_boxes
+                enumerate(photo_boxes)
         )
         
         token_boxes = map(lambda x: x, chain(token_boxes, token_photo_boxes))
-
+        ##print('TODOS LOS TOKENS:', len(list(token_boxes)))
     return list(token_boxes)
