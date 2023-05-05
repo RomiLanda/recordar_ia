@@ -30,14 +30,14 @@ MONITOR_MAP = {
     }
 }
 
-def split_dataset(data_block, train_size: float = 0.6, val_size: float = 0.2, test_size: float = 0.2) -> tuple:
+def split_dataset(data_block, train_size: float = 0.8, val_size: float = 0.1, test_size: float = 0.1) -> tuple:
     """
     Split the data_block into train, val and test sets. The train set will be used to train the model, the val set will be used to validate the model during training and the test set will be used to test the model after training.
 
     Args:
-        train_size (float, optional): Percentage of the data_block that will be used for training. Defaults to 0.6.
-        val_size (float, optional): Percentage of the data_block that will be used for validation. Defaults to 0.2.
-        test_size (float, optional): Percentage of the data_block that will be used for testing. Defaults to 0.2.
+        train_size (float, optional): Percentage of the data_block that will be used for training. Defaults to 0.8.
+        val_size (float, optional): Percentage of the data_block that will be used for validation. Defaults to 0.1.
+        test_size (float, optional): Percentage of the data_block that will be used for testing. Defaults to 0.1.
 
     Returns:
         tuple: Tuple of three lists containing the train, val and test sets.

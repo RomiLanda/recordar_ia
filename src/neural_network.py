@@ -1,6 +1,7 @@
+from sklearn.metrics import classification_report
 import numpy as np
-from model_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
-from model import Model
+from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
+from .nn_model import Model
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning import Trainer
 from torch_geometric.loader import DataLoader
@@ -125,26 +126,21 @@ def predict(trainer, model, data_block, label_map, inv_label_map):
     return data_block
 
 
-def show_predictions(predict_data_block, label_map):
+def show_predictions(predict_data_block):
     y_true = []
     y_pred = []
     for data_item in predict_data_block:
         for token in data_item['token_boxes']:
             y_true.append(token['label'])
             y_pred.append(token['pred_label'])
-            
-    print(f"len(y_true): {len(y_true)}, len(y_pred): {len(y_pred)}")
-    y_true = [str(i) for i in y_true]
-    y_pred = [str(i) for i in y_pred]
 
-    for label in label_map.keys():
-        print(f'{label} : true {len([i for i in y_true if i == label])} || pred {len([i for i in y_pred if i == label])}')
+    print(classification_report(y_true, y_pred))
 
 
 def process(data_block):
     train, val, test = split_dataset(data_block)
-    label_map, inv_label_map = set_label_map(train)
+    label_map, inv_label_map = set_label_map(data_block)
 
     model, trainer = train_model(label_map, train, val, test)
     predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
-    show_predictions(predict_data_block, label_map)
+    show_predictions(predict_data_block)
