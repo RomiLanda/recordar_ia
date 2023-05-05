@@ -67,27 +67,19 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
     return photo_poly_candidates
 
 
-def is_outside(polygon, photo_boxes):
-    for ph_box in photo_boxes:
-        if ~ph_box.contains(polygon['box_polygon']):
-            return True
-
-
 def add_photo_token_boxes(token_boxes, photo_boxes):
 
     if len(photo_boxes) > 0:
-        print('TOKEN_BOXES LENGHT: ', len(token_boxes))
-        print('PHOTO_BOXES LENGHT: ', len(photo_boxes))
+        #print('TOKEN_BOXES LENGHT: ', len(token_boxes))
+        #print('PHOTO_BOXES LENGHT: ', len(photo_boxes))
         for ph_box in photo_boxes:
             for token in token_boxes:
-                if token['id_line_group'] != 'id_7_1_1':
-                    print('Resistente -->', token['id_line_group'])
                 if ph_box.contains(token['box_polygon']):
-                    print('Borrando -->', token['box_polygon'])
+                    #print('Borrando -->', token['box_polygon'])
                     token_boxes.remove(token)
 
         #token_boxes = map(lambda x: x, filter(lambda x: is_outside(x, photo_boxes), token_boxes))
-        print('TOKEN_BOXES LENGHT_AFTER_CLEAN: ', len(token_boxes))
+        #print('TOKEN_BOXES LENGHT_AFTER_CLEAN: ', len(token_boxes))
         token_boxes = map(lambda x: x, token_boxes)
 
         token_photo_boxes = map(
@@ -108,5 +100,5 @@ def add_photo_token_boxes(token_boxes, photo_boxes):
         )
         
         token_boxes = map(lambda x: x, chain(token_boxes, token_photo_boxes))
-        ##print('TODOS LOS TOKENS:', len(list(token_boxes)))
+        
     return list(token_boxes)

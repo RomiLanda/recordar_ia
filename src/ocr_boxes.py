@@ -106,8 +106,7 @@ def apply_tesseract(
     token_boxes = get_line_group_token_boxes(df_data)
     photo_boxes = get_photo_polygons(image=img, df_data=df_data, buffer_ratio=BUFFER_RATIO)
     token_boxes = add_photo_token_boxes(token_boxes, photo_boxes)
-    print('TODOS LOS TOKENS DESDE OCR_BOXES:', len(token_boxes))
-
+    
     data_item["token_boxes"] = token_boxes
 
     if output_path:
