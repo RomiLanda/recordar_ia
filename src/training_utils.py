@@ -13,10 +13,15 @@ warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
 
 NODE_FEATURES = [
-    "n_line",
-    "x_position",
-    "y_position",
-    "box_area",
+    "x_position_normalized",
+    "y_position_normalized",
+    "box_area_normalized",
+    "caps_words_ratio",
+    "is_date",
+    "number_presence",
+    "is_capitalized",
+    "width_category",
+    "height_category"
 ]
 
 MONITOR_MAP = {
@@ -30,7 +35,7 @@ MONITOR_MAP = {
     }
 }
 
-def split_dataset(data_block, train_size: float = 0.8, val_size: float = 0.1, test_size: float = 0.1) -> tuple:
+def split_dataset(data_block, train_size: float = 0.6, val_size: float = 0.2, test_size: float = 0.2) -> tuple:
     """
     Split the data_block into train, val and test sets. The train set will be used to train the model, the val set will be used to validate the model during training and the test set will be used to test the model after training.
 
@@ -109,7 +114,7 @@ def set_label_map(datablock):
 
 def get_doc_graph(data_item, label_map) -> nx.DiGraph:
     data_map = {
-        token_box["id"]: {
+        token_box["id_line_group"]: {
             "node_features": get_node_features(token_box),
             "label": label_map[token_box["label"]],
         }

@@ -102,7 +102,7 @@ def train_model(label_map, train, val, test, use_existing_model):
 def data_item_predict(data_item, pred_map: dict):
     data_item = deepcopy(data_item)
     data_item["token_boxes"] = [
-        token_box | pred_map[token_box["id"]]
+        token_box | pred_map[token_box["id_line_group"]]
         for token_box in data_item["token_boxes"]
     ]
     return data_item
@@ -124,7 +124,7 @@ def predict(trainer, model, data_block, label_map, inv_label_map):
 
     pred_labels = (inv_label_map[label_idx] for label_idx in preds)
     node_ids = (
-        (token_box["id"] for token_box in data["token_boxes"])
+        (token_box["id_line_group"] for token_box in data["token_boxes"])
         for data in data_block
     )
 
