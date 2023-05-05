@@ -157,14 +157,15 @@ def show_predictions(predict_data_block):
 
 def unify_text_by_label(predict_data_block):
     notes = []
-    # usar id_line_group, text, pred_label
     for data_block in predict_data_block:
-        # import pdb; pdb.set_trace()
         new_note = {}
         token_boxes = data_block['token_boxes']
         last_label = None
         content = ""
-        for token_box in token_boxes:
+        #FIXME not working that sorting
+        sorted_boxes = sorted(token_boxes, key=lambda x: x['id_line_group'])
+        # import pdb; pdb.set_trace()
+        for token_box in sorted_boxes:
             _, block_num, par_num, line_num = token_box['id_line_group'].split("_")
             # if token_box['pred_label'] == last_label:
             #     content = content + token_box['text']
