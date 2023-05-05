@@ -3,11 +3,13 @@ from torch_geometric.nn import SAGEConv
 from torch.nn import CrossEntropyLoss
 from torchmetrics import F1Score
 from torch.optim import Adam
+from torch_geometric.loader import DataLoader
 
 from pytorch_lightning import LightningModule
 import torch
 from torch.optim import Optimizer
 
+LEARNING_RATE = 0.0001
 
 class Model(LightningModule):
     def __init__(
@@ -116,5 +118,5 @@ class Model(LightningModule):
         return self.val_loader
 
     def configure_optimizers(self) -> Optimizer:
-        optimizer = Adam(self.parameters(), lr=learning_rate)
+        optimizer = Adam(self.parameters(), lr=LEARNING_RATE)
         return optimizer

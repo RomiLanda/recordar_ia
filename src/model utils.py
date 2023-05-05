@@ -2,8 +2,9 @@ import networkx as nx
 from torch_geometric.data import Data
 from torch_geometric.utils import from_networkx
 from typing import Iterator, Iterable
-from more_itertools import flatten, unique_everseen
+from more_itertools import unique_everseen
 import numpy as np
+from more_itertools import flatten
 from pytorch_lightning.utilities.warnings import PossibleUserWarning
 import warnings
 
