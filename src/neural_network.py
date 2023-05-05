@@ -1,3 +1,4 @@
+import os
 from sklearn.metrics import classification_report
 import numpy as np
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
@@ -8,12 +9,14 @@ from torch_geometric.loader import DataLoader
 from copy import deepcopy
 from more_itertools import flatten
 from pytorch_lightning.utilities.warnings import PossibleUserWarning
+import torch
 
 import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
+SAVE_MODEL_PATH = "./models/model.pt"
 
 # model parameters
 HIDDEN_CHANNELS = 512
@@ -47,7 +50,7 @@ def create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes):
     return model
 
 
-def train_model(label_map, train, val, test):
+def train_model(label_map, train, val, test, use_existing_model):
     n_classes = len(label_map)
 
     pg_graph_train = get_pg_graphs(train, label_map)
@@ -70,6 +73,13 @@ def train_model(label_map, train, val, test):
 
     model = create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes)
 
+    if use_existing_model and os.path.isfile(SAVE_MODEL_PATH):
+        print(f"Loading existing model {SAVE_MODEL_PATH}")
+        model_state_dict = torch.load(SAVE_MODEL_PATH)
+        model.load_state_dict(model_state_dict)
+    else:
+        print("Creating new model")
+
     trainer = Trainer(
         max_epochs= MAX_EPOCHS,
         callbacks=[
@@ -77,7 +87,15 @@ def train_model(label_map, train, val, test):
         ]
     )
 
-    trainer.fit(model)
+    if not use_existing_model:
+        print("Training model")
+        trainer.fit(model)
+
+    if not os.path.isfile(SAVE_MODEL_PATH):
+        # guardamos el último modelo entrenado
+        print("Saving model")
+        torch.save(model.state_dict(), SAVE_MODEL_PATH)
+    
     return model, trainer
 
 
@@ -137,10 +155,10 @@ def show_predictions(predict_data_block):
     print(classification_report(y_true, y_pred))
 
 
-def process(data_block):
+def process(data_block, use_existing_model=True):
     train, val, test = split_dataset(data_block)
     label_map, inv_label_map = set_label_map(data_block)
 
-    model, trainer = train_model(label_map, train, val, test)
+    model, trainer = train_model(label_map, train, val, test, use_existing_model)
     predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
     show_predictions(predict_data_block)

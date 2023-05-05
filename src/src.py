@@ -4,7 +4,7 @@ from .neural_network import process
 
 def procesar_imgs(path_in, path_out): #TODO agregar corrector jurídico si es necesario
     data = create_data_block(path_in, path_out, debug = False)
-    processed_data = process(data)
+    processed_data = process(data, use_existing_model=True)
     noticia_procesada = {"Diario": [],
                                  "Fecha": [],
                                  "Volanta": [],
