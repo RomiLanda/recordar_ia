@@ -39,9 +39,9 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
     df_data['x2'] = df_data['left'] + df_data['width']
     df_data['y2'] = df_data['top'] + df_data['height']
     df_data['id_line_group'] = df_data.apply(lambda row:
-                                                 'id_' + str(row['block_num']) + '_' +
-                                                 str(row['par_num']) + '_' +
-                                                 str(row['line_num']), axis=1
+                                                 'id_' + str(row['block_num']).zfill(3) + '_' +
+                                                 str(row['par_num']).zfill(2) + '_' +
+                                                 str(row['line_num']).zfill(5), axis=1
                                             )
     line_groups_ids = df_data['id_line_group'].value_counts().keys().to_list()
 

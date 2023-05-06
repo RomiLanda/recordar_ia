@@ -13,6 +13,9 @@ import torch
 
 import warnings
 
+import pandas as pd
+import json
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
@@ -155,6 +158,37 @@ def show_predictions(predict_data_block):
     print(classification_report(y_true, y_pred))
 
 
+def write_output_json(predict_data_block):
+    OUTPUT_PATH = 'output_data'
+
+    noticia_procesada = {"Diario": [],
+                        "Fecha": [],
+                        "Volanta": [],
+                        "Título": [],
+                        "Cuerpo": [],
+                        "Copete": [],
+                        "Destacado": [],
+                        "Epígrafe": [],
+                        "Firma": []}
+    
+    partes_noticia = noticia_procesada.keys()
+
+    df_data_items = pd.DataFrame(predict_data_block)
+
+    for i, row in df_data_items.iterrows():
+        json_out_file = row['file_path'].split('/')[-1].replace('.tif', '.json')
+        df_token_boxes = (pd.DataFrame(row['token_boxes']))
+        gp_tokens = df_token_boxes.groupby(by='pred_label')
+        for label in partes_noticia:
+            if label in gp_tokens.groups.keys():
+                noticia_procesada[label] = ''.join(gp_tokens.get_group(label).sort_values(by='id_line_group')['text'])
+        
+        with open(f'{OUTPUT_PATH}/{json_out_file}', 'w') as f:
+            json.dump(noticia_procesada, f, ensure_ascii=False, indent=2)
+
+        print(f'Archivo {json_out_file} generado correctamente!')
+
+
 def process(data_block, use_existing_model=True):
     train, val, test = split_dataset(data_block)
     label_map, inv_label_map = set_label_map(data_block)
@@ -162,3 +196,4 @@ def process(data_block, use_existing_model=True):
     model, trainer = train_model(label_map, train, val, test, use_existing_model)
     predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
     show_predictions(predict_data_block)
+    write_output_json(predict_data_block)
