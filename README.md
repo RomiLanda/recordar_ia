@@ -2,6 +2,8 @@
 
 ## Running 
 
+You should use Python 3.11.1, check that before creating your virtualenv
+
 1. Crear virtualenv usando python3 (follow https://virtualenvwrapper.readthedocs.io/en/latest/install.html)
 
         virtualenv <name_env>
@@ -14,7 +16,10 @@
 
         pip install -r requirements.txt
 
+4. Instalar tesseract
 
-4. Correr run.py con 
+        sudo sh install.sh
+
+5. Correr run.py con 
 
         python run.py
