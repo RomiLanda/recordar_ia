@@ -13,6 +13,9 @@ import torch
 
 import warnings
 
+import pandas as pd
+import json
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
@@ -155,24 +158,35 @@ def show_predictions(predict_data_block):
     print(classification_report(y_true, y_pred))
 
 
-def unify_text_by_label(predict_data_block):
-    notes = []
-    for data_block in predict_data_block:
-        new_note = {}
-        token_boxes = data_block['token_boxes']
-        last_label = None
-        content = ""
-        #FIXME not working that sorting
-        sorted_boxes = sorted(token_boxes, key=lambda x: x['id_line_group'])
-        # import pdb; pdb.set_trace()
-        for token_box in sorted_boxes:
-            _, block_num, par_num, line_num = token_box['id_line_group'].split("_")
-            # if token_box['pred_label'] == last_label:
-            #     content = content + token_box['text']
-            # else:
-            print(token_box['pred_label'])
-            print(token_box['text'])
-        notes.append(new_note)
+def write_output_json(predict_data_block):
+    OUTPUT_PATH = 'output_data'
+
+    noticia_procesada = {"Diario": [],
+                        "Fecha": [],
+                        "Volanta": [],
+                        "Título": [],
+                        "Cuerpo": [],
+                        "Copete": [],
+                        "Destacado": [],
+                        "Epígrafe": [],
+                        "Firma": []}
+    
+    partes_noticia = noticia_procesada.keys()
+
+    df_data_items = pd.DataFrame(predict_data_block)
+
+    for i, row in df_data_items.iterrows():
+        json_out_file = row['file_path'].split('/')[-1].replace('.tif', '.json')
+        df_token_boxes = (pd.DataFrame(row['token_boxes']))
+        gp_tokens = df_token_boxes.groupby(by='pred_label')
+        for label in partes_noticia:
+            if label in gp_tokens.groups.keys():
+                noticia_procesada[label] = ''.join(gp_tokens.get_group(label).sort_values(by='id_line_group')['text'])
+        
+        with open(f'{OUTPUT_PATH}/{json_out_file}', 'w') as f:
+            json.dump(noticia_procesada, f, ensure_ascii=False, indent=2)
+
+        print(f'Archivo {json_out_file} generado correctamente!')
 
 
 def process(data_block, use_existing_model=True):
@@ -182,4 +196,4 @@ def process(data_block, use_existing_model=True):
     model, trainer = train_model(label_map, train, val, test, use_existing_model)
     predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
     show_predictions(predict_data_block)
-    unify_text_by_label(predict_data_block)
+    write_output_json(predict_data_block)
