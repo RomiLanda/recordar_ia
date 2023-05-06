@@ -1,5 +1,6 @@
 # Folders
-
+/input_data/
+/out_data/
 toda_la_data/
 !/toda_la_data/.gitkeep
 /notebooks/01_ingest_labeled_data/iaxidentidad_json/
