@@ -109,6 +109,62 @@ def get_segments_from_annotations(data_item, annotations, json_path):
     return data_item
 
 
+def remove_file(file_path):
+    try:
+        os.remove(file_path)
+        print(f"Archivo eliminado: {file_path}")
+    except OSError as e:
+        print(f"Error: {file_path} : {e.strerror}")
+
+
+def clean_docs(INPUT_DATA):
+    print(f"Cantidad de imágenes a procesar: {len(os.listdir(INPUT_DATA))/2}")
+    for filename in os.listdir(INPUT_DATA):
+        file_path = f"{INPUT_DATA}{filename}"
+        print(f"file_path: {file_path}")
+        json_path = file_path.replace('.tif','.json')
+        annotations = get_annotations(json_path)
+        if not NEWS_QTY_TO_FILTER or (annotations and len(annotations['Notas']) <= NEWS_QTY_TO_FILTER):
+            data_item = load_image(file_path)
+            if data_item:
+                if annotations is not None:
+                    if isinstance(annotations['Fecha'], list) and not annotations['Fecha']:
+                        print(f"REMOVED because annotations['Fecha'] is an empty array and should be an object: {file_path}")
+                        remove_file(file_path)
+                        remove_file(json_path)
+
+                    print(f"Diario: {annotations['Diario']}")
+                    if isinstance(annotations['Diario'], type(None)) or isinstance(annotations['Fecha'], type(None)):
+                        print(f"REMOVED because Diario and Fecha are null!!! {file_path}")
+                        remove_file(file_path)
+                        remove_file(json_path)                        
+
+                    if annotations['Diario']:
+                        diario = annotations['Diario']
+                        if isinstance(diario, list) and not diario:
+                            print(f"annotations['Diario'] is an empty array and should be an object: {diario}")
+                        else:
+                            bb = annotations['Diario']['bounding_box']
+                            try:
+                                if len(bb):
+                                    if (isinstance(bb['x'], float) or isinstance(bb['y'], float) or isinstance(bb['width'], float) or isinstance(bb['height'], float)):
+                                        print(f"REMOVED because has float coordinates!!!  {file_path}")
+                                        remove_file(file_path)
+                                        remove_file(json_path)
+                                    if bb['x']<0 or bb['y']<0 or bb['width']<0 or bb['height']<0:
+                                        print(f"REMOVED because has negatives coordinates!!!  {file_path}")
+                                        remove_file(file_path)
+                                        remove_file(json_path)
+
+                            except:
+                                if bb['w'] or bb['h']:
+                                    print(f"REMOVED because has w or h!!! {file_path}")
+                                    remove_file(file_path)
+                                    remove_file(json_path)                                    
+
+                        file_path = json_path.replace('.json', '.tif')
+
+
 def create_data_block(INPUT_DATA, OUTPUT_DATA, train_flow ,debug = True):
     data_block = []
     if train_flow:
