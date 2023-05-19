@@ -109,35 +109,40 @@ def get_segments_from_annotations(data_item, annotations, json_path):
     return data_item
 
 
-def create_data_block(INPUT_DATA, OUTPUT_DATA, debug = False):
+def create_data_block(INPUT_DATA, OUTPUT_DATA, train_flow ,debug = True):
     data_block = []
-    print(f"Cantidad de imágenes a procesar: {len(os.listdir(INPUT_DATA))/2}")
-    for filename in os.listdir(INPUT_DATA):
-        if filename.endswith('.tif'):
-            file_path = f"{INPUT_DATA}{filename}"
-            json_path = file_path.replace('.tif','.json')
-            if os.path.exists(json_path):
-                annotations = get_annotations(json_path)
-                if not NEWS_QTY_TO_FILTER or (annotations and len(annotations['Notas']) <= NEWS_QTY_TO_FILTER):
-                    data_item = load_image(file_path)
-                    if data_item:
-                        data_item = get_segments_from_annotations(data_item, annotations, json_path)
-                        data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
-                        data_item = add_features(data_item)
-                        data_item = get_label_tokens(data_item)
-                        data_item = create_doc_graphs(data_item)
-                        if debug:
-                            doc_debug(data_item, OUTPUT_DATA)
-                        data_item = image_unload(data_item)
-                        data_block.append(data_item)
-            else:
+    if train_flow:
+        print("Procesando data para entrenamiento...")
+        for filename in os.listdir(INPUT_DATA):
+            if filename.endswith('.tif'):
+                file_path = f"{INPUT_DATA}{filename}"
+                json_path = file_path.replace('.tif','.json')
+                if os.path.exists(json_path):
+                    annotations = get_annotations(json_path)
+                    if not NEWS_QTY_TO_FILTER or (annotations and len(annotations['Notas']) <= NEWS_QTY_TO_FILTER):
+                        data_item = load_image(file_path)
+                        if data_item:
+                            data_item = get_segments_from_annotations(data_item, annotations, json_path)
+                            data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
+                            data_item = add_features(data_item)
+                            data_item = get_label_tokens(data_item)
+                            data_item = create_doc_graphs(data_item)
+                            if debug:
+                                doc_debug(data_item, OUTPUT_DATA, train_flow)
+                            data_item = image_unload(data_item)
+                            data_block.append(data_item)
+    else:
+        print("Procesando imágenes para predicción...")
+        for filename in os.listdir(INPUT_DATA):
+            if filename.endswith('.tif'):
+                file_path = f"{INPUT_DATA}{filename}"
                 data_item = load_image(file_path)
                 if data_item:
                     data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
                     data_item = add_features(data_item)
                     data_item = create_doc_graphs(data_item)
                     if debug:
-                        doc_debug(data_item, OUTPUT_DATA)
+                        doc_debug(data_item, OUTPUT_DATA, train_flow)
                     data_item = image_unload(data_item)
                     data_block.append(data_item)
 
