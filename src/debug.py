@@ -11,11 +11,9 @@ FONT = ImageFont.truetype(
     "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10
 )
 
-def doc_debug(data_item, out_path):
+def doc_debug(data_item, out_path, train_flow):
     filename = os.path.basename(data_item["file_path"])
     out_file_path = f"{out_path}/{filename}"
-
-    segments = data_item["segments"]
 
     image = cv2pil(data_item["img_bitmap"])
     token_boxes = data_item["token_boxes"]
@@ -28,22 +26,29 @@ def doc_debug(data_item, out_path):
     for token_box in token_boxes:
         box = token_box["box"]
         n_line = token_box["id_line_group"]
-        label = token_box["label"]
-
-        color = "red" if label != "Indefinido" else "black"
-        draw.rectangle(box, outline=color, width=1)
-        draw.text(
-            (box[0], box[1]),
-            f"{n_line}:{label}",
-            font=FONT,
-            anchor="rd",
-            align="left",
-            fill=color,
-        )
-
-    for segment in segments:
-        box = segment["box"]
-        draw.rectangle(box, outline="blue", width=1)
+        if train_flow:
+            label = token_box["label"]
+            color = "red" if label != "Indefinido" else "black"
+            draw.rectangle(box, outline=color, width=1)
+            draw.text(
+                (box[0], box[1]),
+                f"{n_line}:{label}",
+                font=FONT,
+                anchor="rd",
+                align="left",
+                fill=color,
+            )
+        else:
+            color = "black"
+            draw.rectangle(box, outline=color, width=1)
+            draw.text(
+                (box[0], box[1]),
+                f"{n_line}",
+                font=FONT,
+                anchor="rd",
+                align="left",
+                fill=color,
+            )           
 
     for src, tgt, attr in data_item["doc_graph"].edges(data=True):
         src_box = boxes_map[src]
@@ -60,6 +65,12 @@ def doc_debug(data_item, out_path):
             align="left",
             fill="blue",
         )
+
+    if train_flow:
+        segments = data_item["segments"]
+        for segment in segments:
+            box = segment["box"]
+            draw.rectangle(box, outline="blue", width=1)
 
     image.save(out_file_path)
 
