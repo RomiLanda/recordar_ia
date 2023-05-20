@@ -112,37 +112,58 @@ def set_label_map(datablock):
     return label_map, inv_label_map
 
 
-def get_doc_graph(data_item, label_map) -> nx.DiGraph:
-    data_map = {
-        token_box["id_line_group"]: {
-            "node_features": get_node_features(token_box),
-            "label": label_map[token_box["label"]],
-        }
-        for token_box in data_item["token_boxes"]
-    }
-
+def get_doc_graph(data_item, label_map, train_flow) -> nx.DiGraph:
     doc_graph = data_item["doc_graph"]
-    node_attributes = {
-        node: {
-            "x": data_map[node]["node_features"],
-            "y": data_map[node]["label"],
+    if train_flow:
+        data_map = {
+            token_box["id_line_group"]: {
+                "node_features": get_node_features(token_box),
+                "label": label_map[token_box["label"]],
+            }
+            for token_box in data_item["token_boxes"]
         }
-        for node in doc_graph.nodes
-    }
+
+        
+        node_attributes = {
+            node: {
+                "x": data_map[node]["node_features"],
+                "y": data_map[node]["label"],
+            }
+            for node in doc_graph.nodes
+        }
+
+    else:
+        data_map = {
+            token_box["id_line_group"]: {
+                "node_features": get_node_features(token_box),
+            }
+            for token_box in data_item["token_boxes"]
+        }
+
+        node_attributes = {
+            node: {
+                "x": data_map[node]["node_features"],
+            }
+            for node in doc_graph.nodes
+        }
 
     nx.set_node_attributes(doc_graph, node_attributes)
     return doc_graph
 
 
-def get_pg_graph(doc_graph: nx.DiGraph) -> Data:
-    pg_graph = from_networkx(doc_graph)
-    pg_graph.x = pg_graph.x.float()
-    pg_graph.y = pg_graph.y.long()
+def get_pg_graph(doc_graph: nx.DiGraph, train_flow) -> Data:
+    if train_flow:
+        pg_graph = from_networkx(doc_graph)
+        pg_graph.x = pg_graph.x.float()
+        pg_graph.y = pg_graph.y.long()
+    else:
+        pg_graph = from_networkx(doc_graph)
+        pg_graph.x = pg_graph.x.float()
     return pg_graph
 
 
-def get_pg_graphs(data_block, label_map) -> list[Data]:
-    doc_graphs = [get_doc_graph(data_item,label_map) for data_item in data_block]
-    pg_graph = [get_pg_graph(doc_graph) for doc_graph in doc_graphs]
+def get_pg_graphs(data_block, label_map, train_flow) -> list[Data]:
+    doc_graphs = [get_doc_graph(data_item,label_map, train_flow) for data_item in data_block]
+    pg_graph = [get_pg_graph(doc_graph, train_flow) for doc_graph in doc_graphs]
 
     return pg_graph
