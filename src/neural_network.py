@@ -19,7 +19,7 @@ import json
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
-SAVE_MODEL_PATH = "./models/model.pt"
+SAVE_MODEL_PATH = "src/models/model.pt"
 
 # model parameters
 HIDDEN_CHANNELS = 512
@@ -53,12 +53,12 @@ def create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes):
     return model
 
 
-def train_model(label_map, train, val, test, use_existing_model):
+def train_model(label_map, train, val, test, use_existing_model, train_flow):
     n_classes = len(label_map)
 
-    pg_graph_train = get_pg_graphs(train, label_map)
-    pg_graph_val = get_pg_graphs(val, label_map)
-    pg_graph_test = get_pg_graphs(test, label_map)
+    pg_graph_train = get_pg_graphs(train, label_map, train_flow)
+    pg_graph_val = get_pg_graphs(val, label_map, train_flow)
+    pg_graph_test = get_pg_graphs(test, label_map, train_flow)
 
     train_monitor = "loss"
     es_patience = 100
@@ -111,8 +111,8 @@ def data_item_predict(data_item, pred_map: dict):
     return data_item
 
 
-def predict(trainer, model, data_block, label_map, inv_label_map):
-    pg_graphs = get_pg_graphs(data_block, label_map)
+def predict(trainer, model, data_block, label_map, inv_label_map, train_flow):
+    pg_graphs = get_pg_graphs(data_block, label_map, train_flow)
 
     loader = DataLoader(
         pg_graphs, batch_size=5, shuffle=False
@@ -189,11 +189,11 @@ def write_output_json(predict_data_block):
         print(f'Archivo {json_out_file} generado correctamente!')
 
 
-def process(data_block, use_existing_model=True):
+def process(data_block, train_flow, use_existing_model=True):
     train, val, test = split_dataset(data_block)
     label_map, inv_label_map = set_label_map(data_block)
 
-    model, trainer = train_model(label_map, train, val, test, use_existing_model)
-    predict_data_block = predict(trainer, model, test, label_map, inv_label_map)
+    model, trainer = train_model(label_map, train, val, test, use_existing_model, train_flow)
+    predict_data_block = predict(trainer, model, test, label_map, inv_label_map, train_flow)
     show_predictions(predict_data_block)
-    write_output_json(predict_data_block)
+    # write_output_json(predict_data_block)

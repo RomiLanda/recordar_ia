@@ -1,4 +1,6 @@
 # Folders
+/lightning_logs
+/src/models/
 /input_data/
 /out_data/
 toda_la_data/
