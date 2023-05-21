@@ -1,11 +1,8 @@
-import os
-from pathlib import Path
-from copy import deepcopy
-from itertools import groupby
-from more_itertools import windowed, flatten
-from pytesseract import image_to_data, Output
-from .utils import b64_encoder, cv2pil, blank_filter, vertical_filter  
 from shapely import box
+from copy import deepcopy
+from pytesseract import image_to_data, Output
+from .utils import cv2pil, blank_filter, vertical_filter  
+
 
 tess_configs = {
     "default": "--psm 11",
@@ -39,7 +36,8 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
     df_data['x2'] = df_data['left'] + df_data['width']
     df_data['y2'] = df_data['top'] + df_data['height']
     df_data['id_line_group'] = df_data.apply(lambda row:
-                                                 'id_' + str(row['block_num']).zfill(3) + '_' +
+                                                 'id_' + 
+                                                 str(row['block_num']).zfill(3) + '_' +
                                                  str(row['par_num']).zfill(2) + '_' +
                                                  str(row['line_num']).zfill(5), axis=1
                                             )
@@ -90,25 +88,14 @@ def apply_tesseract(
     tesseract_config: str = "default",
     output_path: str = "",
 ):
-
     data_item = deepcopy(data_item)
-    image_path = data_item["file_path"]
     img = data_item["img_bitmap"]
     image = cv2pil(img)
 
-    image_path = data_item["file_path"]
-    filename = os.path.basename(image_path)
-    image_id = f"{filename}"
     df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
     
     token_boxes = get_line_group_token_boxes(df_data)
 
     data_item["token_boxes"] = token_boxes
-
-    if output_path:
-        path = Path(output_path)
-        path.mkdir(parents=True, exist_ok=True)
-        file_hash = b64_encoder(data_item["file_path"])
-        # save_json(token_boxes, f"{output_path}/{file_hash}.json") TODO Polygon not serializable
 
     return data_item

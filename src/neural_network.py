@@ -1,28 +1,26 @@
-import os
-from sklearn.metrics import classification_report
+import json
+import warnings
 import numpy as np
-from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
-from .nn_model import Model
-from .utils import save_json, load_json
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning import Trainer
-from torch_geometric.loader import DataLoader
+import pandas as pd
 from copy import deepcopy
 from more_itertools import flatten
+from pytorch_lightning import Trainer
+from torch_geometric.loader import DataLoader
+from sklearn.metrics import classification_report
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.utilities.warnings import PossibleUserWarning
-import torch
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-import warnings
+from .nn_model import Model
+from .utils import save_json, load_json
+from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
 
-import pandas as pd
-import json
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
 SAVE_MODEL_PATH = "src/models/" 
-MODEL_FILE_NAME = "best_model"
+MODEL_FILE_NAME = "model"
 
 # model parameters
 HIDDEN_CHANNELS = 512
@@ -30,7 +28,7 @@ BATCH_SIZE = 32
 MAX_EPOCHS = 5000
 
  
-def train_model(data_block, train_flow, save_path):
+def train_model(data_block, train_flow: bool, save_path: str):
     train, val, test = split_dataset(data_block)
     
     label_map, inv_label_map = set_label_map(data_block)
@@ -102,7 +100,6 @@ def train_model(data_block, train_flow, save_path):
     return train, val, test
 
 
-
 def load_model(path_model: str, model_file_name: str):
     model_metadata = load_json(f"{path_model}/metadata.json")
     label_map = load_json(f"{path_model}/label_map.json")
@@ -125,7 +122,6 @@ def load_model(path_model: str, model_file_name: str):
     )
 
     return model, trainer, label_map, inv_label_map
-
 
 
 def data_item_predict(data_item, pred_map: dict):
@@ -176,10 +172,10 @@ def predict(data_block, path_model: str, model_file_name: str, train_flow: bool)
     return data_block
 
 
-def show_predictions(predict_data_block):
+def show_predictions(data_block):
     y_true = []
     y_pred = []
-    for data_item in predict_data_block:
+    for data_item in data_block:
         for token in data_item['token_boxes']:
             y_true.append(token['label'])
             y_pred.append(token['pred_label'])
@@ -187,7 +183,7 @@ def show_predictions(predict_data_block):
     print(classification_report(y_true, y_pred))
 
 
-def write_output_json(predict_data_block):
+def write_output_json(data_block):
     OUTPUT_PATH = 'out_data'
 
     noticia_procesada = {"Diario": [],
@@ -202,7 +198,7 @@ def write_output_json(predict_data_block):
     
     partes_noticia = noticia_procesada.keys()
 
-    df_data_items = pd.DataFrame(predict_data_block)
+    df_data_items = pd.DataFrame(data_block)
 
     for i, row in df_data_items.iterrows():
         json_out_file = row['file_path'].split('/')[-1].replace('.tif', '.json')
@@ -218,7 +214,7 @@ def write_output_json(predict_data_block):
         print(f'Archivo {json_out_file} generado correctamente!')
 
 
-def process(data_block, train_flow):
+def process(data_block, train_flow: bool):
     if train_flow:
         _, _, test = train_model(data_block, train_flow, SAVE_MODEL_PATH)
         predict_data_block = predict(test, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)

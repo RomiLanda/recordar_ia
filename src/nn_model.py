@@ -1,15 +1,16 @@
-from torch import nn
-from torch_geometric.nn import SAGEConv
-from torch.nn import CrossEntropyLoss
-from torchmetrics import F1Score
-from torch.optim import Adam
-from torch_geometric.loader import DataLoader
-
-from pytorch_lightning import LightningModule
 import torch
+from torch import nn
+from torch.optim import Adam
+from torchmetrics import F1Score
 from torch.optim import Optimizer
+from torch.nn import CrossEntropyLoss
+from torch_geometric.nn import SAGEConv
+from torch_geometric.loader import DataLoader
+from pytorch_lightning import LightningModule
+
 
 LEARNING_RATE = 0.0001
+
 
 class Model(LightningModule):
     def __init__(
@@ -41,9 +42,7 @@ class Model(LightningModule):
 
     
     def forward(
-        self,
-        x: torch.Tensor,
-        edge_index: torch.Tensor,
+        self, x: torch.Tensor, edge_index: torch.Tensor,
     ) -> torch.Tensor:
 
         x = self.sage_conv1(x, edge_index)
@@ -51,6 +50,7 @@ class Model(LightningModule):
 
         x = self.sage_conv2(x, edge_index)
         return x
+
 
     def training_step(
         self, batch: torch.Tensor, batch_index: torch.Tensor
@@ -71,6 +71,7 @@ class Model(LightningModule):
         self.log("train_f1", self.f1, prog_bar=True)
 
         return loss
+
 
     def validation_step(self, batch: torch.Tensor, batch_idx: torch.Tensor):
         """
@@ -95,6 +96,7 @@ class Model(LightningModule):
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_f1", self.f1, prog_bar=True)
 
+
     def predict_step(
         self, batch: torch.Tensor, batch_idx: torch.Tensor
     ) -> list:
@@ -111,11 +113,14 @@ class Model(LightningModule):
 
         return pred, confidences
 
+
     def train_dataloader(self):
         return self.train_loader
 
+
     def val_dataloader(self):
         return self.val_loader
+
 
     def configure_optimizers(self) -> Optimizer:
         optimizer = Adam(self.parameters(), lr=LEARNING_RATE)

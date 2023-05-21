@@ -1,9 +1,6 @@
 import os
-import cv2
-import numpy as np
-from PIL import ImageDraw
-import matplotlib.pyplot as plt 
 from PIL import ImageFont
+from PIL import ImageDraw
 
 from .utils import cv2pil, get_boxes_line, get_line_center
 
@@ -11,7 +8,7 @@ FONT = ImageFont.truetype(
     "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10
 )
 
-def doc_debug(data_item, out_path, train_flow):
+def doc_debug(data_item, out_path: str, train_flow: bool):
     filename = os.path.basename(data_item["file_path"])
     out_file_path = f"{out_path}/{filename}"
 
