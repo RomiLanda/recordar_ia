@@ -3,7 +3,9 @@ from sklearn.metrics import classification_report
 import numpy as np
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
 from .nn_model import Model
+from .utils import save_json, load_json
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import Trainer
 from torch_geometric.loader import DataLoader
 from copy import deepcopy
@@ -19,15 +21,24 @@ import json
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
-SAVE_MODEL_PATH = "src/models/model.pt"
+SAVE_MODEL_PATH = "src/models/" 
+MODEL_FILE_NAME = "best_model"
 
 # model parameters
 HIDDEN_CHANNELS = 512
 BATCH_SIZE = 32
 MAX_EPOCHS = 5000
 
+ 
+def train_model(data_block, train_flow, save_path):
+    train, val, test = split_dataset(data_block)
+    
+    label_map, inv_label_map = set_label_map(data_block)
 
-def create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes):
+    pg_graph_train = get_pg_graphs(train, label_map, train_flow)
+    pg_graph_val = get_pg_graphs(val, label_map, train_flow)
+
+    n_classes = len(label_map)
     n_features = pg_graph_train[0].x.shape[1]
 
     train_loader = DataLoader(
@@ -38,10 +49,6 @@ def create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes):
         pg_graph_val, batch_size=BATCH_SIZE, shuffle=False, num_workers = 16
     )
 
-    test_loader = DataLoader(
-        pg_graph_test, batch_size=BATCH_SIZE, shuffle=False, num_workers = 16
-    )
-
     model = Model(
         train_loader, 
         val_loader,
@@ -49,16 +56,6 @@ def create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes):
         n_features= n_features,
         n_classes= n_classes,
     )
-
-    return model
-
-
-def train_model(label_map, train, val, test, use_existing_model, train_flow):
-    n_classes = len(label_map)
-
-    pg_graph_train = get_pg_graphs(train, label_map, train_flow)
-    pg_graph_val = get_pg_graphs(val, label_map, train_flow)
-    pg_graph_test = get_pg_graphs(test, label_map, train_flow)
 
     train_monitor = "loss"
     es_patience = 100
@@ -74,32 +71,61 @@ def train_model(label_map, train, val, test, use_existing_model, train_flow):
         verbose=False,
     )
 
-    model = create_model(pg_graph_train, pg_graph_val, pg_graph_test, n_classes)
-
-    if use_existing_model and os.path.isfile(SAVE_MODEL_PATH):
-        print(f"Loading existing model {SAVE_MODEL_PATH}")
-        model_state_dict = torch.load(SAVE_MODEL_PATH)
-        model.load_state_dict(model_state_dict)
-    else:
-        print("Creating new model")
+    checkpoint_callback = ModelCheckpoint(
+        dirpath= save_path,
+        filename= MODEL_FILE_NAME,
+        monitor=monitor,
+        mode=mode,
+        save_top_k=1,
+    )
 
     trainer = Trainer(
         max_epochs= MAX_EPOCHS,
         callbacks=[
             early_stop_callback,
-        ]
+            checkpoint_callback
+        ],
+        default_root_dir = save_path,
+    )
+    
+    trainer.fit(model)
+
+    model_metadata = {
+        "n_features": n_features,
+        "n_classes": n_classes,
+    }
+
+    save_json(model_metadata, f"{save_path}/metadata.json")
+    save_json(label_map, f"{save_path}/label_map.json")
+    save_json(inv_label_map, f"{save_path}/inv_label_map.json")
+
+    return train, val, test
+
+
+
+def load_model(path_model: str, model_file_name: str):
+    model_metadata = load_json(f"{path_model}/metadata.json")
+    label_map = load_json(f"{path_model}/label_map.json")
+    inv_label_map = load_json(f"{path_model}/inv_label_map.json")
+
+    model_in_file = f"{path_model}/{model_file_name}.ckpt"
+    
+    model = Model.load_from_checkpoint(
+        checkpoint_path= model_in_file,
+        train_loader=None,
+        val_loader=None,
+        hidden_channels= HIDDEN_CHANNELS,
+        n_features=model_metadata["n_features"],
+        n_classes=model_metadata["n_classes"],
+        class_weights=None,
     )
 
-    if not use_existing_model:
-        print("Training model")
-        trainer.fit(model)
+    trainer = Trainer(
+        default_root_dir = SAVE_MODEL_PATH,
+    )
 
-    if not os.path.isfile(SAVE_MODEL_PATH):
-        # guardamos el último modelo entrenado
-        print("Saving model")
-        torch.save(model.state_dict(), SAVE_MODEL_PATH)
-    
-    return model, trainer
+    return model, trainer, label_map, inv_label_map
+
 
 
 def data_item_predict(data_item, pred_map: dict):
@@ -111,7 +137,10 @@ def data_item_predict(data_item, pred_map: dict):
     return data_item
 
 
-def predict(trainer, model, data_block, label_map, inv_label_map, train_flow):
+def predict(data_block, path_model: str, model_file_name: str, train_flow: bool):
+    
+    model, trainer, label_map, inv_label_map = load_model(SAVE_MODEL_PATH, MODEL_FILE_NAME)
+
     pg_graphs = get_pg_graphs(data_block, label_map, train_flow)
 
     loader = DataLoader(
@@ -125,7 +154,7 @@ def predict(trainer, model, data_block, label_map, inv_label_map, train_flow):
     preds = np.hstack(preds)
     confidences = np.hstack(confidences)
 
-    pred_labels = (inv_label_map[label_idx] for label_idx in preds)
+    pred_labels = (inv_label_map[str(label_idx)] for label_idx in preds)
     node_ids = (
         (token_box["id_line_group"] for token_box in data["token_boxes"])
         for data in data_block
@@ -159,7 +188,7 @@ def show_predictions(predict_data_block):
 
 
 def write_output_json(predict_data_block):
-    OUTPUT_PATH = 'output_data'
+    OUTPUT_PATH = 'out_data'
 
     noticia_procesada = {"Diario": [],
                         "Fecha": [],
@@ -181,7 +210,7 @@ def write_output_json(predict_data_block):
         gp_tokens = df_token_boxes.groupby(by='pred_label')
         for label in partes_noticia:
             if label in gp_tokens.groups.keys():
-                noticia_procesada[label] = ''.join(gp_tokens.get_group(label).sort_values(by='id_line_group')['text'])
+                noticia_procesada[label] = ' '.join(gp_tokens.get_group(label).sort_values(by='id_line_group')['text'])
         
         with open(f'{OUTPUT_PATH}/{json_out_file}', 'w') as f:
             json.dump(noticia_procesada, f, ensure_ascii=False, indent=2)
@@ -189,11 +218,12 @@ def write_output_json(predict_data_block):
         print(f'Archivo {json_out_file} generado correctamente!')
 
 
-def process(data_block, train_flow, use_existing_model=True):
-    train, val, test = split_dataset(data_block)
-    label_map, inv_label_map = set_label_map(data_block)
+def process(data_block, train_flow):
+    if train_flow:
+        _, _, test = train_model(data_block, train_flow, SAVE_MODEL_PATH)
+        predict_data_block = predict(test, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
+        show_predictions(predict_data_block)
 
-    model, trainer = train_model(label_map, train, val, test, use_existing_model, train_flow)
-    predict_data_block = predict(trainer, model, test, label_map, inv_label_map, train_flow)
-    show_predictions(predict_data_block)
-    # write_output_json(predict_data_block)
+    else:
+        predict_data_block = predict(data_block, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
+        write_output_json(predict_data_block)
