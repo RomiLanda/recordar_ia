@@ -1,12 +1,12 @@
-import networkx as nx
-from torch_geometric.data import Data
-from torch_geometric.utils import from_networkx
-from typing import Iterator, Iterable
-from more_itertools import unique_everseen
-import numpy as np
-from more_itertools import flatten
-from pytorch_lightning.utilities.warnings import PossibleUserWarning
 import warnings
+import numpy as np
+import networkx as nx
+from more_itertools import flatten
+from typing import Iterator, Iterable
+from torch_geometric.data import Data
+from more_itertools import unique_everseen
+from torch_geometric.utils import from_networkx
+from pytorch_lightning.utilities.warnings import PossibleUserWarning
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
@@ -56,7 +56,6 @@ def split_dataset(data_block, train_size: float = 0.8, val_size: float = 0.1, te
     # get the number of samples for each set
     n_train = int(n_samples * train_size)
     n_val = int(n_samples * val_size)
-    n_test = int(n_samples * test_size)
 
     # get the indices for each set
     indices = np.arange(n_samples)

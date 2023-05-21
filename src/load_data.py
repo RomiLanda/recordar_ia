@@ -18,7 +18,7 @@ from .add_features import add_features
 # con valor=99 usamos multi-nota (incluidas las uni-nota) - una imagen con mas de una nota
 NEWS_QTY_TO_FILTER = 1
 
-def load_image(img_path : str):
+def load_image(img_path: str):
     """
     Create DataItem
     """
@@ -55,8 +55,17 @@ class Caja(object):
         self.y_1 = bounding_box['y']
         self.x_2 = bounding_box['x'] + bounding_box['width'] 
         self.y_2 = bounding_box['y'] + bounding_box['height']
-        self.box = (bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['width'], bounding_box['y'] + bounding_box['height'])
-        self.polygon = box(bounding_box['x'], bounding_box['y'], bounding_box['x'] + bounding_box['width'], bounding_box['y'] + bounding_box['height'])
+        self.box = (
+            bounding_box['x'], 
+            bounding_box['y'], 
+            bounding_box['x'] + bounding_box['width'], 
+            bounding_box['y'] + bounding_box['height']
+            )
+        self.polygon = box(
+            bounding_box['x'], bounding_box['y'],
+            bounding_box['x'] + bounding_box['width'],
+            bounding_box['y'] + bounding_box['height']
+            )
         self.content = contenido
         self.label = etiqueta
         
@@ -78,7 +87,7 @@ def get_annotations(json_path):
     return {}
 
 
-def get_segments_from_annotations(data_item, annotations, json_path):
+def get_segments_from_annotations(data_item, annotations, json_path: str):
     """
     Extracts each segment of each article in the json file
     """    
@@ -109,7 +118,7 @@ def get_segments_from_annotations(data_item, annotations, json_path):
     return data_item
 
 
-def remove_file(file_path):
+def remove_file(file_path: str):
     try:
         os.remove(file_path)
         print(f"Archivo eliminado: {file_path}")
@@ -117,7 +126,7 @@ def remove_file(file_path):
         print(f"Error: {file_path} : {e.strerror}")
 
 
-def clean_docs(INPUT_DATA):
+def clean_docs(INPUT_DATA: str):
     print(f"Cantidad de imágenes a procesar: {len(os.listdir(INPUT_DATA))/2}")
     for filename in os.listdir(INPUT_DATA):
         file_path = f"{INPUT_DATA}{filename}"
@@ -165,7 +174,7 @@ def clean_docs(INPUT_DATA):
                         file_path = json_path.replace('.json', '.tif')
 
 
-def create_data_block(INPUT_DATA, OUTPUT_DATA, train_flow ,debug = True):
+def create_data_block(INPUT_DATA: str, OUTPUT_DATA: str, train_flow: bool, debug: bool = True):
     data_block = []
     if train_flow:
         print("Procesando data para entrenamiento...")

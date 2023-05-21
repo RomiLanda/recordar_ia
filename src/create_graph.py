@@ -1,11 +1,9 @@
 import numpy as np
 import networkx as nx
 from copy import deepcopy
-from itertools import chain
+from .debug import doc_debug
 from shapely.strtree import STRtree
 from shapely import distance, box, centroid
-from more_itertools import flatten, windowed
-from .debug import doc_debug
 
 
 def box_buffer(box_polygon, scale=(0,0)):
@@ -14,7 +12,12 @@ def box_buffer(box_polygon, scale=(0,0)):
     """
     x1, y1, x2, y2 = box_polygon.bounds
     x_scale, y_scale = scale
-    box_buffered = box(x1-((x_scale*(x2-x1))/2), y1-((y_scale*(y2-y1))/2), x2+((x_scale*(x2-x1))/2), y2+((y_scale*(y2-y1))/2))
+    box_buffered = box(
+        x1-((x_scale*(x2-x1))/2), 
+        y1-((y_scale*(y2-y1))/2), 
+        x2+((x_scale*(x2-x1))/2), 
+        y2+((y_scale*(y2-y1))/2)
+        )
     return box_buffered
 
 

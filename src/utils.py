@@ -2,7 +2,6 @@ import cv2
 import json
 import numpy as np
 from PIL import Image
-from copy import deepcopy
 from base64 import b64encode
 from shapely.geometry import box as shapely_box
 
@@ -27,6 +26,7 @@ def cv2pil(cv_image: np.ndarray) -> Image:
     image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(image)
     return pil_image
+
 
 # -------- LABELS------------
 
@@ -78,10 +78,10 @@ def get_boxes_ditance(box_1, box_2) -> float:
 
 # -------- Filters------------
 
-
 def blank_filter(df_data):
     """
-    Returns dataframe without elements with text NaN or empty from pytesseract data as dataframe
+    Returns dataframe without elements with text NaN 
+    or empty from pytesseract data as dataframe
     """   
     mask_not_blank = (df_data['text'].str.strip() != '')
     df_data = df_data[mask_not_blank].dropna(subset=['text'])
@@ -89,6 +89,9 @@ def blank_filter(df_data):
 
 
 def vertical_filter(df_data):
-    """Returns dataframe without elements with abnormal proportion from pytesseract data as dataframe"""
+    """
+    Returns dataframe without elements with abnormal proportion
+    from pytesseract data as dataframe
+    """
     mask_not_vertical = (df_data['height'] < (df_data['width'] * 2.5))
     return df_data[mask_not_vertical]

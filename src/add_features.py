@@ -1,6 +1,6 @@
+import re
 import statistics
 import dateparser
-import re
 import pandas as pd
 
 
