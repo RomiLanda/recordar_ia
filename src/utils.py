@@ -17,6 +17,12 @@ def save_json(json_data, file_path: str):
         f.write(json.dumps(json_data, indent=4, ensure_ascii=False))
         
 
+def load_json(json_file_path: str):
+    with open(json_file_path, "r") as f:
+        content = json.loads(f.read())
+        return content
+
+
 def cv2pil(cv_image: np.ndarray) -> Image:
     image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(image)
