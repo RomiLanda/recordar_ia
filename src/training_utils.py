@@ -35,7 +35,7 @@ MONITOR_MAP = {
     }
 }
 
-def split_dataset(data_block, train_size: float = 0.6, val_size: float = 0.2, test_size: float = 0.2) -> tuple:
+def split_dataset(data_block, train_size: float = 0.8, val_size: float = 0.1, test_size: float = 0.1) -> tuple:
     """
     Split the data_block into train, val and test sets. The train set will be used to train the model, the val set will be used to validate the model during training and the test set will be used to test the model after training.
 
