@@ -14,8 +14,6 @@ tess_configs = {
     "with_whitelist": r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;()"',
 }
 
-TESSERACT_LANG = "spa"
-TESSERACT_CONFIG = "with_whitelist"
 
 
 def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
@@ -28,7 +26,8 @@ def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
     )
     df_data = blank_filter(df_data)
     df_data = vertical_filter(df_data)
-    
+    if df_data.shape[0] == 0:
+        print('Error: No se logró identificar ninguna palabra.')
     return df_data
 
 
@@ -85,15 +84,17 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
 def apply_tesseract(
     data_item,
     tesseract_langs: str = "spa",
-    tesseract_config: str = "default",
+    tesseract_config: str = "with_whitelist",
     output_path: str = "",
 ):
     data_item = deepcopy(data_item)
     img = data_item["img_bitmap"]
     image = cv2pil(img)
-
+    print(f"Aplicando OCR sobre archivo {data_item['file_path']} ...")
     df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
-    
+    if df_data.shape[0] == 0:
+        return -1
+
     token_boxes = get_line_group_token_boxes(df_data)
 
     data_item["token_boxes"] = token_boxes
