@@ -1,0 +1,1 @@
+Copiar contenido del .zip que corresponda a su hardware disponible (con aceleración de GPU o sólo CPU) al directorio Models.
