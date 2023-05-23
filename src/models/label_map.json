@@ -1,0 +1,14 @@
+{
+    "Copete": 0,
+    "Fecha": 1,
+    "Cuerpo": 2,
+    "Título": 3,
+    "Destacado": 4,
+    "Indefinido": 5,
+    "Volanta": 6,
+    "Firma": 7,
+    "Epígrafe": 8,
+    "Fotografía": 9,
+    "Diario": 10,
+    "Página": 11
+}
