@@ -5,6 +5,8 @@ from .debug import doc_debug
 from shapely.strtree import STRtree
 from shapely import distance, box, centroid
 
+X_DILATE = 0.4
+Y_DILATE = 1
 
 def box_buffer(box_polygon, scale=(0,0)):
     """
@@ -51,7 +53,7 @@ def create_doc_graphs(
     token_boxes = data_item["token_boxes"]
 
     nodes = (token_box["id_line_group"] for token_box in token_boxes)
-    rels = get_intersections(data_item, dilate_scale=(0.4, 1))
+    rels = get_intersections(data_item, dilate_scale=(X_DILATE, Y_DILATE))
 
     min_weight = min(weight for *_, weight in rels)
     rels = ((src, tgt, min_weight / weight) for src, tgt, weight in rels)
