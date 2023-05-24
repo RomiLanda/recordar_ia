@@ -86,7 +86,7 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
 def apply_tesseract(
     data_item,
     tesseract_langs: str = "spa",
-    tesseract_config: str = "default",
+    tesseract_config: str = "with_whitelist",
     output_path: str = "",
 ):
     data_item = deepcopy(data_item)

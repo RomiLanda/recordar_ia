@@ -67,24 +67,20 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
     return photo_poly_candidates
 
 
-def add_photo_token_boxes(token_boxes, photo_boxes, VERBOSE=True):
-
+def add_photo_token_boxes(token_boxes, photo_boxes):
+    """
+    Returns list of polygons without token_boxes contained in photo_boxes.
+    """
     if len(photo_boxes) > 0:
-        if VERBOSE:
-            print('TOKEN_BOXES LENGHT: ', len(token_boxes))
-            print('PHOTO_BOXES LENGHT: ', len(photo_boxes))
+        tokens_to_delete = []
+
         for ph_box in photo_boxes:
-            if VERBOSE: 
-                print('Photo box -->', ph_box)
             for token in token_boxes:
                 if ph_box.contains(token['box_polygon']):
-                    if VERBOSE: 
-                        print('Borrando -->', token['box_polygon'])
-                    token_boxes.remove(token)
-
-        #token_boxes = map(lambda x: x, filter(lambda x: is_outside(x, photo_boxes), token_boxes))
-        if VERBOSE:
-            print('TOKEN_BOXES LENGHT_AFTER_CLEAN: ', len(token_boxes))
+                    tokens_to_delete.append(token)
+        
+        for token in tokens_to_delete:
+            token_boxes.remove(token)
         
         token_boxes = map(lambda x: x, token_boxes)
 
