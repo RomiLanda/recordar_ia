@@ -83,8 +83,10 @@ def blank_filter(df_data):
     Returns dataframe without elements with text NaN 
     or empty from pytesseract data as dataframe
     """   
-    mask_not_blank = (df_data['text'].str.strip() != '')
-    df_data = df_data[mask_not_blank].dropna(subset=['text'])
+    df_data = df_data.dropna(subset=['text'])
+    if df_data.shape[0] > 0:
+        mask_not_blank = (df_data['text'].str.strip() != '')
+        df_data = df_data[mask_not_blank]
     return df_data
 
 

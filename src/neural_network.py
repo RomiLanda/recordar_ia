@@ -19,7 +19,7 @@ from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=PossibleUserWarning)
 
-SAVE_MODEL_PATH = "src/models/" 
+SAVE_MODEL_PATH = "src/models" 
 MODEL_FILE_NAME = "model"
 
 # model parameters
