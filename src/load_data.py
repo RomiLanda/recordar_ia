@@ -189,7 +189,7 @@ def create_data_block(INPUT_DATA: str, OUTPUT_DATA: str, train_flow: bool, debug
                         if data_item:
                             data_item = get_segments_from_annotations(data_item, annotations, json_path)
                             data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
-                            if data_item == -1:
+                            if data_item == -1:     # apply_tesseract returns -1 when OCR output was null, so jumps this image's data_item creation
                                 continue
                             data_item = add_features(data_item)
                             data_item = get_label_tokens(data_item)
@@ -206,7 +206,7 @@ def create_data_block(INPUT_DATA: str, OUTPUT_DATA: str, train_flow: bool, debug
                 data_item = load_image(file_path)
                 if data_item:
                     data_item = apply_tesseract(data_item, output_path=OUTPUT_DATA)
-                    if data_item == -1:
+                    if data_item == -1:     # apply_tesseract returns -1 when OCR output was null, so jumps this image's data_item creation
                         continue
                     data_item = add_features(data_item)
                     data_item = create_doc_graphs(data_item)
