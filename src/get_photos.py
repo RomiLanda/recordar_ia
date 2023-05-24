@@ -95,7 +95,7 @@ def add_photo_token_boxes(token_boxes, photo_boxes):
                 "box_width": int(x[1].bounds[2] - x[1].bounds[0]),
                 "x_position": int(x[1].bounds[0]),
                 "y_position": int(x[1].bounds[1]),
-                "text": 'FOTOGRAFÍA',
+                "text": 'photo_box',
                 "id_line_group": 'id_photo_' + str(x[0])
             },
                 enumerate(photo_boxes)
