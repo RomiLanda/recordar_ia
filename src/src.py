@@ -4,7 +4,7 @@ from .neural_network import process
 from .load_data import create_data_block
 
 # SET WORKFLOW
-TRAIN_FLOW = False
+TRAIN_FLOW = True
 DEBUG = True
 
 def procesar_imgs(path_in, path_out, train_flow = TRAIN_FLOW): #TODO agregar corrector jurídico si es necesario
