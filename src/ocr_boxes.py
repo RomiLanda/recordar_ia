@@ -2,6 +2,7 @@ from shapely import box
 from copy import deepcopy
 from pytesseract import image_to_data, Output
 from .utils import cv2pil, blank_filter, vertical_filter  
+from .get_photos import add_photo_token_boxes, get_photo_polygons
 
 
 tess_configs = {
@@ -14,7 +15,7 @@ tess_configs = {
     "with_whitelist": r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;()"',
 }
 
-
+BUFFER_RATIO = 1.8
 
 def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
     tess_config = tess_configs.get(tesseract_config, "")
@@ -99,6 +100,8 @@ def apply_tesseract(
         return -1
 
     token_boxes = get_line_group_token_boxes(df_data)
+    photo_boxes = get_photo_polygons(image=img, df_data=df_data, buffer_ratio=BUFFER_RATIO)
+    token_boxes = add_photo_token_boxes(token_boxes, photo_boxes)
 
     data_item["token_boxes"] = token_boxes
 
