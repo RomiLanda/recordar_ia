@@ -30,15 +30,15 @@ def caps_words_ratio(text: str):
 
 
 def number_presence(text: str):
-    return True if len(re.findall(r"\d", text)) > 0 else False
+    return len(re.findall(r"\d", text)) > 0
 
 
 def is_capitalized(text: str):
-    return True if len(re.findall(r"^[A-Z][a-z]*", text)) > 0 else False
+    return len(re.findall(r"^[A-Z][a-z]*", text)) > 0
 
 
 def is_photo(text: str):
-    return True if text == 'photo_box' else False
+    return text == 'photo_box'
 
 
 def get_attributes_text(data_item):

@@ -8,7 +8,7 @@ def clear_abnormal_ratio_photos(boxes_list):
     """
     Returns polygon list filtered by aspect ratio.
     """
-    MAX_RATIO = 5
+    MAX_PHOTO_ASPECT_RATIO = 5
     clean_boxes_list = []
     for p in boxes_list:
         x1, y1, x2, y2 = map(int, p.bounds)
