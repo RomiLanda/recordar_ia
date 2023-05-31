@@ -14,7 +14,7 @@ def clear_abnormal_ratio_photos(boxes_list):
         x1, y1, x2, y2 = map(int, p.bounds)
         w = x2 - x1
         h = y2 - y1
-        if ((max(h, w) / min(h, w)) < MAX_RATIO):
+        if ((max(h, w) / min(h, w)) < MAX_PHOTO_ASPECT_RATIO):
             clean_boxes_list.append(p)
     return clean_boxes_list
 
