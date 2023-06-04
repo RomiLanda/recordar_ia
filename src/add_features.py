@@ -19,7 +19,7 @@ def mode_normalized_height(data_item):
 
 
 def is_date(text: str) -> bool:
-    parsed_date = dateparser.parse(text, settings={"STRICT_PARSING": True})
+    parsed_date = dateparser.parse(text, settings={"STRICT_PARSING": False})
     if not parsed_date:
         return False
     return True
@@ -28,6 +28,12 @@ def is_date(text: str) -> bool:
 def caps_words_ratio(text: str):
     return len(re.findall(r"\b[A-Z][a-z]*", text))/len(text.split()) if len(text.split()) > 0 else 0
 
+def get_alpha_ratio(text: str):
+    alpha_counter = 0
+    for chr in text:
+        if chr.isalpha():
+            alpha_counter += 1
+    return alpha_counter/len(text)
 
 def number_presence(text: str):
     return len(re.findall(r"\d", text)) > 0
@@ -44,7 +50,8 @@ def get_attributes_text(data_item):
         box['is_date'] = is_date(text)
         box['number_presence'] = number_presence(text)
         box['is_capitalized'] = is_capitalized(text)
-        box['text_lenght'] = len(text)
+        box['text_length'] = len(text.strip())
+        box['alpha_ratio'] = get_alpha_ratio(text)
     return data_item
 
 
@@ -89,13 +96,18 @@ def get_height_category(data_item):
 
 def get_label_candidate(data_item):
     HEIGHT_BOTTOM_THRESH = 0.1
-    HEIGHT_TOP_THRESH = 0.7
+    HEIGHT_TOP_THRESH = 0.5
+    LENGTH_LOW_THRESH = 3
+    ALPHA_RATIO_THRESH = 0.7
+
     for box in data_item['token_boxes']:
         if box['text'] == 'photo_box':
             box['label_candidate'] = 'Fotografía'
-        elif box['is_date']:
+        elif box['is_date'] and box['number_presence']:
             box['label_candidate'] = 'Fecha'
-        elif box['caps_words_ratio'] == 1:
+        elif box['text_length'] <= LENGTH_LOW_THRESH or box['alpha_ratio'] < ALPHA_RATIO_THRESH:
+            box['label_candidate'] = 'Ruido'
+        elif box['caps_words_ratio'] == 1 and not box['number_presence']:
             box['label_candidate'] = 'Firma'
         elif box['height_category'] >= HEIGHT_TOP_THRESH:
             box['label_candidate'] = 'Título'
