@@ -2,6 +2,7 @@ import re
 import statistics
 import dateparser
 import pandas as pd
+import shapely
 
 
 def mode_height(data_item):
@@ -18,7 +19,7 @@ def mode_normalized_height(data_item):
     return data_item
 
 
-def is_date(text: str) -> bool:
+def contains_date(text: str) -> bool:
     parsed_date = dateparser.parse(text, settings={"STRICT_PARSING": False})
     if not parsed_date:
         return False
@@ -47,10 +48,11 @@ def get_attributes_text(data_item):
     for box in data_item['token_boxes']:
         text = box['text']
         box['caps_words_ratio'] = caps_words_ratio(text)
-        box['is_date'] = is_date(text)
+        box['contains_date'] = contains_date(text)
         box['number_presence'] = number_presence(text)
         box['is_capitalized'] = is_capitalized(text)
         box['text_length'] = len(text.strip())
+        box['words_qty'] = len(text.strip().split(' '))
         box['alpha_ratio'] = get_alpha_ratio(text)
     return data_item
 
@@ -62,6 +64,8 @@ def normalize_positions(data_item):
         box['x_position_normalized'] = (box['x_position'] / image_width)
         box['y_position_normalized'] = (box['y_position'] / image_height)
         box['box_area_normalized'] = (box['box_area'] / (image_height * image_width))
+        box['x_centroid_normalized'] = box['box_polygon'].centroid.x / image_width
+        box['y_centroid_normalized'] = box['box_polygon'].centroid.y / image_height
     return data_item
 
 
@@ -99,17 +103,21 @@ def get_label_candidate(data_item):
     HEIGHT_TOP_THRESH = 0.5
     LENGTH_LOW_THRESH = 3
     ALPHA_RATIO_THRESH = 0.7
+    TITLE_Y_TOP_THRESH = 0.5
+    MARGIN_THRESH = 0.03
 
     for box in data_item['token_boxes']:
         if box['text'] == 'photo_box':
             box['label_candidate'] = 'Fotografía'
-        elif box['is_date'] and box['number_presence']:
+        elif box['x_position_normalized'] < MARGIN_THRESH or box['x_position_normalized'] > 1 - MARGIN_THRESH or box['y_position_normalized'] < MARGIN_THRESH or box['y_position_normalized'] > 1 - MARGIN_THRESH:
+            box['label_candidate'] = 'Ruido'
+        elif box['contains_date'] and box['number_presence']:
             box['label_candidate'] = 'Fecha'
         elif box['text_length'] <= LENGTH_LOW_THRESH or box['alpha_ratio'] < ALPHA_RATIO_THRESH:
             box['label_candidate'] = 'Ruido'
-        elif box['caps_words_ratio'] == 1 and not box['number_presence']:
+        elif box['caps_words_ratio'] == 1 and box['words_qty'] >= 2 and not box['number_presence']:
             box['label_candidate'] = 'Firma'
-        elif box['height_category'] >= HEIGHT_TOP_THRESH:
+        elif box['height_category'] >= HEIGHT_TOP_THRESH and box['y_position_normalized'] < TITLE_Y_TOP_THRESH:
             box['label_candidate'] = 'Título'
         elif box['height_category'] <= HEIGHT_BOTTOM_THRESH:
             box['label_candidate'] = 'Cuerpo'
