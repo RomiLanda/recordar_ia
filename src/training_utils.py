@@ -17,7 +17,7 @@ NODE_FEATURES = [
     "y_position_normalized",
     "box_area_normalized",
     "caps_words_ratio",
-    "is_date",
+    "contains_date",
     "number_presence",
     "is_capitalized",
     "width_category",

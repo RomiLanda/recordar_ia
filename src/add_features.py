@@ -2,7 +2,6 @@ import re
 import statistics
 import dateparser
 import pandas as pd
-import shapely
 
 
 def mode_height(data_item):
@@ -45,6 +44,9 @@ def is_capitalized(text: str):
 
 
 def get_attributes_text(data_item):
+    """
+    Adds quantitative features derived from text.
+    """
     for box in data_item['token_boxes']:
         text = box['text']
         box['caps_words_ratio'] = caps_words_ratio(text)
@@ -58,6 +60,9 @@ def get_attributes_text(data_item):
 
 
 def normalize_positions(data_item):
+    """
+    Adds position features normalized to image size.
+    """
     image_height = data_item['image_shape']['image_height']
     image_width = data_item['image_shape']['image_width']
     for box in data_item['token_boxes']:
@@ -70,6 +75,10 @@ def normalize_positions(data_item):
 
 
 def create_categories(data_item, attribute: str, bins=10):
+    """
+    Creates categories for attribute segmentation.
+    In case of photo token, it is excluded to avoid unrealistic statistics.
+    """
     all_boxes_values = []
     for box in data_item['token_boxes']:
         if not box['text'] == 'photo_box':
@@ -78,6 +87,10 @@ def create_categories(data_item, attribute: str, bins=10):
 
 
 def get_width_category(data_item):
+    """
+    Adds 'width_category' that groups width in N number of categories (BINS).
+    In case of photo token, assings value -1.
+    """
     BINS = 10
     width_categories = create_categories(data_item, attribute='box_width', bins=BINS)
     for i, box in enumerate(data_item['token_boxes']):
@@ -89,6 +102,10 @@ def get_width_category(data_item):
 
 
 def get_height_category(data_item):
+    """
+    Adds 'height_category' that groups height in N number of categories (BINS).
+    In case of photo token, assings value -1.
+    """
     BINS = 7
     height_categories = create_categories(data_item, attribute='box_height', bins=BINS)
     for i, box in enumerate(data_item['token_boxes']):
@@ -99,6 +116,11 @@ def get_height_category(data_item):
     return data_item
 
 def get_label_candidate(data_item):
+    """
+    This function creates 'label_candidate' field that suggests a token label
+    based on a set of rules about existing features. Later this function could
+    be replaced by a Decision Tree Classifier.
+    """
     HEIGHT_BOTTOM_THRESH = 0.1
     HEIGHT_TOP_THRESH = 0.5
     LENGTH_LOW_THRESH = 3
