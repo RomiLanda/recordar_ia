@@ -29,10 +29,9 @@ def caps_words_ratio(text: str):
     return len(re.findall(r"\b[A-Z][a-z]*", text))/len(text.split()) if len(text.split()) > 0 else 0
 
 def get_alpha_ratio(text: str):
-    alpha_counter = 0
-    for chr in text:
-        if chr.isalpha():
-            alpha_counter += 1
+    if len(text) == 0:
+        return 0
+    alpha_counter = sum(1 for char in text if char.isalpha())
     return alpha_counter/len(text)
 
 def number_presence(text: str):
@@ -79,10 +78,7 @@ def create_categories(data_item, attribute: str, bins=10):
     Creates categories for attribute segmentation.
     In case of photo token, it is excluded to avoid unrealistic statistics.
     """
-    all_boxes_values = []
-    for box in data_item['token_boxes']:
-        if not box['text'] == 'photo_box':
-            all_boxes_values.append(box[attribute])
+    all_boxes_values = [box[attribute] for box in data_item['token_boxes'] if box['text'] != 'photo_box']
     return pd.cut(all_boxes_values, bins=bins, labels=range(bins))
 
 
