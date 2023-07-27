@@ -9,8 +9,8 @@ from .debug import doc_debug
 from .ocr_boxes import apply_tesseract
 from .utils import get_label_tokens
 from .create_graph import create_doc_graphs
-from .add_features import add_features
-
+from .add_features import add_features, get_label_candidate
+from .tree_model import load_tree
 # filtramos (usamos) las imagenes que tengan una cantidad de notas menor o igual a NEWS_QTY_TO_FILTER
 # por lo que si NEWS_QTY_TO_FILTER=3, vamos a quedarnos con las imagenes que tengan hasta 3 notas
 
@@ -200,6 +200,7 @@ def create_data_block(INPUT_DATA: str, OUTPUT_DATA: str, train_flow: bool, debug
                             data_block.append(data_item)
     else:
         print("Procesando imágenes para predicción...")
+        tree_pipeline = load_tree() #Decision Tree Classifier for first phase labeling
         for filename in os.listdir(INPUT_DATA):
             if filename.endswith('.tif'):
                 file_path = f"{INPUT_DATA}{filename}"
@@ -209,6 +210,7 @@ def create_data_block(INPUT_DATA: str, OUTPUT_DATA: str, train_flow: bool, debug
                     if data_item == -1:     # apply_tesseract returns -1 when OCR output was null, so jumps this image's data_item creation
                         continue
                     data_item = add_features(data_item)
+                    data_item = get_label_candidate(data_item, tree_pipeline)
                     data_item = create_doc_graphs(data_item)
                     if debug:
                         doc_debug(data_item, OUTPUT_DATA, train_flow)

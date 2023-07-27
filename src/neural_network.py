@@ -2,6 +2,7 @@ import json
 import warnings
 import numpy as np
 import pandas as pd
+import pickle
 from copy import deepcopy
 from more_itertools import flatten
 from pytorch_lightning import Trainer
@@ -14,6 +15,8 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from .nn_model import Model
 from .utils import save_json, load_json
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
+
+from .tree_model import train_tree_model
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -31,6 +34,11 @@ MAX_EPOCHS = 5000
 def train_model(data_block, train_flow: bool, save_path: str):
     train, val, test = split_dataset(data_block)
     
+    # Decision tree classifier training
+    tree_model = train_tree_model(train)
+    with open(f'{save_path}/tree_model.pkl', 'wb') as f:
+        pickle.dump(tree_model, f)
+
     label_map, inv_label_map = set_label_map(data_block)
 
     pg_graph_train = get_pg_graphs(train, label_map, train_flow)
