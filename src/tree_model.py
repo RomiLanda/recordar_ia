@@ -41,20 +41,8 @@ def train_tree_model(data: dict):
 
     return tree_pipeline
 
-def load_tree(model_path):
+def load_tree(model_path=SAVE_MODEL_PATH):
     with open(model_path + '/tree_model.pkl', 'rb') as f:
         tree_pipeline = pickle.load(f)
     
     return tree_pipeline
-
-
-
-def process_tree(data, train_flow: bool):
-    if train_flow:
-        tree_pipeline = train_tree_model(data)
-
-
-    else:
-        y_hat = predict_tree(data, SAVE_MODEL_PATH, train_flow)
-    
-    return

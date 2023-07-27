@@ -2,7 +2,8 @@ import re
 import statistics
 import dateparser
 import pandas as pd
-from .tree_model import load_tree, pre_process
+import numpy as np
+from .tree_model import pre_process
 
 
 def mode_height(data_item):
@@ -119,10 +120,13 @@ def get_label_candidate(data_item, model):
     """
 
     X = pre_process(data_item['token_boxes'], train_flow=False)
-    y = model.predict(X)
+    y_proba = model.predict_proba(X)
+    y = [model.classes_[i] for i in np.argmax(y_proba, axis=1)]
+    
 
     for idx, box in enumerate(data_item['token_boxes']):
         box['label_candidate'] = y[idx]
+        box['label_candidate_proba'] = y_proba[idx].max()
 
     return data_item
 
