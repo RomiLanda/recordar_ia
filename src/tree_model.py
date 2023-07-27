@@ -29,15 +29,17 @@ def pre_process(data: dict, train_flow: bool):
     
     return (tokens_df.drop(columns=['label']), tokens_df['label']) if train_flow else tokens_df
 
-def train_tree_model(data: dict):
-    X_train, y_train = pre_process(data, train_flow=True)
-    #tree_pipeline = make_pipeline(MinMaxScaler(), LabelEncoder(), ExtraTreesClassifier(criterion='gini', n_estimators=10000, bootstrap=False))
+def train_tree_model(data_train, data_test):
+    X_train, y_train = pre_process(data_train, train_flow=True)
+
     tree_pipeline = make_pipeline(MinMaxScaler(), ExtraTreesClassifier(criterion='gini', n_estimators=10000, bootstrap=False))
     tree_pipeline.fit(X_train, y_train)
     
-    # y_hat = tree_pipeline.predict(X_test)
-    # report = classification_report(y_test, y_hat)
-    # print(report)
+    X_test, y_test = pre_process(data_test, train_flow=True)
+    y_hat = tree_pipeline.predict(X_test)
+    report = classification_report(y_test, y_hat)
+    print('Resultado de entrenamiento de Decision Tree Classifier:')
+    print(report)
 
     return tree_pipeline
 

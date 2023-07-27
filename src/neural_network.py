@@ -35,7 +35,7 @@ def train_model(data_block, train_flow: bool, save_path: str):
     train, val, test = split_dataset(data_block)
     
     # Decision tree classifier training
-    tree_model = train_tree_model(train)
+    tree_model = train_tree_model(train, test)
     with open(f'{save_path}/tree_model.pkl', 'wb') as f:
         pickle.dump(tree_model, f)
 

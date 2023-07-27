@@ -116,13 +116,13 @@ def get_height_category(data_item):
 def get_label_candidate(data_item, model):
     """
     This function creates 'label_candidate' field that suggests a token label
-    based on a Decision Tree Classifier.
+    based on a Decision Tree Classifier. Also creates 'label_candidate_proba'
+    containing major class probability.
     """
 
     X = pre_process(data_item['token_boxes'], train_flow=False)
     y_proba = model.predict_proba(X)
     y = [model.classes_[i] for i in np.argmax(y_proba, axis=1)]
-    
 
     for idx, box in enumerate(data_item['token_boxes']):
         box['label_candidate'] = y[idx]
