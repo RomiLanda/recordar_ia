@@ -12,8 +12,8 @@ def procesar_imgs(path_in, path_out, train_flow = TRAIN_FLOW): #TODO agregar cor
     
     if DEBUG:
         report_file = 'data_block_train.csv' if train_flow == True else 'data_block_pred.csv'
-        report_df = pd.DataFrame(data=data)
-        report_df.to_csv(path_out + report_file, index=False)
+        pd.DataFrame(data=data).to_csv(path_out + report_file, index=False)
+
         print(f'Se creo el archivo de reporte --> {report_file}')
 
     process(data, train_flow)
