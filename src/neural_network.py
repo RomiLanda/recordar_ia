@@ -16,7 +16,7 @@ from .nn_model import Model
 from .utils import save_json, load_json
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
 
-from .tree_model import train_tree_model
+from .tree_model import train_tree_model, save_tree
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -34,10 +34,8 @@ MAX_EPOCHS = 5000
 def train_model(data_block, train_flow: bool, save_path: str):
     train, val, test = split_dataset(data_block)
     
-    # Decision tree classifier training
-    tree_model = train_tree_model(train, test)
-    with open(f'{save_path}/tree_model.pkl', 'wb') as f:
-        pickle.dump(tree_model, f)
+    # Decision tree classifier training and saving
+    save_tree(train_tree_model(train, test))
 
     label_map, inv_label_map = set_label_map(data_block)
 

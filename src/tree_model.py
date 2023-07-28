@@ -1,7 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.metrics import classification_report
@@ -44,7 +42,11 @@ def train_tree_model(data_train, data_test):
     return tree_pipeline
 
 def load_tree(model_path=SAVE_MODEL_PATH):
-    with open(model_path + '/tree_model.pkl', 'rb') as f:
+    with open(f'{model_path}/tree_model.pkl', 'rb') as f:
         tree_pipeline = pickle.load(f)
     
     return tree_pipeline
+
+def save_tree(model, model_path=SAVE_MODEL_PATH):
+    with open(f'{model_path}/tree_model.pkl', 'wb') as f:
+        pickle.dump(model, f)
