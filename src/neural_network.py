@@ -14,6 +14,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from .nn_model import Model
 from .utils import save_json, load_json
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
+from .metrics import model_evaluation
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -219,6 +220,7 @@ def process(data_block, train_flow: bool):
         _, _, test = train_model(data_block, train_flow, SAVE_MODEL_PATH)
         predict_data_block = predict(test, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
         show_predictions(predict_data_block)
+        print(model_evaluation(predict_data_block))
 
     else:
         predict_data_block = predict(data_block, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
