@@ -1,6 +1,28 @@
 import pandas as pd
 from jiwer import measures
 from more_itertools import flatten
+from shapely.geometry import box as shapely_box
+
+
+def get_ocr_segments(data_item):
+
+    for idx, segmento in enumerate(data_item['segments']):
+        ocr_by_segment = {
+                        'id_line_group': [],
+                        'text': []
+                        }
+        for token_box in data_item['token_boxes']:
+            if token_box['box_polygon'].intersects(segmento['polygon']):
+                ocr_by_segment['id_line_group'].append(token_box['id_line_group'])
+                ocr_by_segment['text'].append(token_box['text'])
+
+    df_ocr_by_segment = pd.DataFrame(data=ocr_by_segment)
+    data_item['segments'][idx]['ocr_text'] = ' '.join(df_ocr_by_segment.sort_values(by='id_line_group')['text'])
+
+    return data_item
+
+def add_ocr_segments(data_block):
+    return [get_ocr_segments(data_item) for data_item in data_block]
 
 
 def get_metrics(truth: str, hypothesis: str) -> tuple:
@@ -13,7 +35,7 @@ def get_metrics(truth: str, hypothesis: str) -> tuple:
     return wer, mer, wil, wip, cer
 
 
-def row_eval(annotations: str, text: str) -> dict:
+def segment_eval(annotations: str, text: str) -> dict:
     metrics = {
         "wer" : 0.0,
         "mer" : 0.0,
@@ -36,31 +58,26 @@ def row_eval(annotations: str, text: str) -> dict:
 
 EVAL_COLUMNS = [
     "label",
-    "pred_label",
-    "annotations",
-    "text",
+    "ocr_metrics",
+    "content",
+    "ocr_text"
 ]
 
 def model_evaluation(data_block):
-    flattened_data = flatten(data_item['token_boxes'] for data_item in data_block)
-    raw_data = pd.DataFrame(flattened_data)
-    report = raw_data[EVAL_COLUMNS].reset_index(drop=True)
+    for data_item in data_block:
+        for segmento in data_item['segments']:
+            segmento.update(segment_eval(segmento.content, segmento.ocr_text))
 
-    metrics = (
-        row_eval(row.annotations, row.text) for _ , row in report.iterrows()
-    ) 
-
-    metrics = pd.DataFrame(metrics)
-    report = pd.concat([report, metrics], axis=1)
+    segments_metrics = pd.DataFrame(flatten(data_item['segments'] for data_item in data_block))[EVAL_COLUMNS]
 
     summary = (
-        report[["label", "wer", "mer", "wil", "wip", "cer"]]
+        segments_metrics[["label", "wer", "mer", "wil", "wip", "cer"]]
         .groupby("label")
         .mean()
         )
     
     global_metrics = pd.DataFrame(
-        report[
+        segments_metrics[
             [
                 "wer", 
                 "mer", 
@@ -73,4 +90,4 @@ def model_evaluation(data_block):
 
     global_metrics.rename(columns={0: "global_average"}, inplace=True)
 
-    return report, summary, global_metrics
+    return segments_metrics, summary, global_metrics
