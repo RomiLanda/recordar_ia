@@ -4,7 +4,7 @@ from more_itertools import flatten
 from shapely.geometry import box as shapely_box
 
 
-def get_ocr_segments(data_item):
+def add_ocr_segments(data_item):
 
     for idx, segmento in enumerate(data_item['segments']):
         ocr_by_segment = {
@@ -16,13 +16,10 @@ def get_ocr_segments(data_item):
                 ocr_by_segment['id_line_group'].append(token_box['id_line_group'])
                 ocr_by_segment['text'].append(token_box['text'])
 
-    df_ocr_by_segment = pd.DataFrame(data=ocr_by_segment)
-    data_item['segments'][idx]['ocr_text'] = ' '.join(df_ocr_by_segment.sort_values(by='id_line_group')['text'])
+        df_ocr_by_segment = pd.DataFrame(data=ocr_by_segment)
+        data_item['segments'][idx]['ocr_text'] = ' '.join(df_ocr_by_segment.sort_values(by='id_line_group')['text'])
 
     return data_item
-
-def add_ocr_segments(data_block):
-    return [get_ocr_segments(data_item) for data_item in data_block]
 
 
 def get_metrics(truth: str, hypothesis: str) -> tuple:
@@ -58,15 +55,20 @@ def segment_eval(annotations: str, text: str) -> dict:
 
 EVAL_COLUMNS = [
     "label",
-    "ocr_metrics",
     "content",
-    "ocr_text"
+    "ocr_text",
+    "wer", 
+    "mer",
+    "wil",
+    "wip",
+    "cer"
 ]
 
 def model_evaluation(data_block):
     for data_item in data_block:
+        data_item = add_ocr_segments(data_item)
         for segmento in data_item['segments']:
-            segmento.update(segment_eval(segmento.content, segmento.ocr_text))
+            segmento.update(segment_eval(segmento['content'], segmento['ocr_text']))
 
     segments_metrics = pd.DataFrame(flatten(data_item['segments'] for data_item in data_block))[EVAL_COLUMNS]
 
