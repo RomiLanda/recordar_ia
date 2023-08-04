@@ -49,6 +49,7 @@ def segment_eval(annotations: str, text: str) -> dict:
     metrics["wer"] = wer
     metrics["mer"] = mer
     metrics["wil"] = wil
+    metrics["wip"] = wip
     metrics["cer"] = cer
 
     return metrics
