@@ -3,6 +3,7 @@ from jiwer import measures
 from more_itertools import flatten
 from shapely.geometry import box as shapely_box
 
+METRICS_REPORTS_PATH = "src/models/metrics/"
 
 def add_ocr_segments(data_item):
 
@@ -18,6 +19,7 @@ def add_ocr_segments(data_item):
 
         df_ocr_by_segment = pd.DataFrame(data=ocr_by_segment)
         data_item['segments'][idx]['ocr_text'] = ' '.join(df_ocr_by_segment.sort_values(by='id_line_group')['text'])
+        data_item['segments'][idx]['true_text'] = data_item['segments'][idx]['content'].replace('\n', ' ')
 
     return data_item
 
@@ -56,7 +58,7 @@ def segment_eval(annotations: str, text: str) -> dict:
 
 EVAL_COLUMNS = [
     "label",
-    "content",
+    "true_text",
     "ocr_text",
     "wer", 
     "mer",
@@ -65,11 +67,11 @@ EVAL_COLUMNS = [
     "cer"
 ]
 
-def model_evaluation(data_block):
+def text_evaluation(data_block):
     for data_item in data_block:
         data_item = add_ocr_segments(data_item)
         for segmento in data_item['segments']:
-            segmento.update(segment_eval(segmento['content'], segmento['ocr_text']))
+            segmento.update(segment_eval(segmento['true_text'], segmento['ocr_text']))
 
     segments_metrics = pd.DataFrame(flatten(data_item['segments'] for data_item in data_block))[EVAL_COLUMNS]
 
@@ -92,5 +94,9 @@ def model_evaluation(data_block):
     )
 
     global_metrics.rename(columns={0: "global_average"}, inplace=True)
+
+    segments_metrics.to_csv(METRICS_REPORTS_PATH + 'segments_metrics.csv', index=False)
+    summary.to_csv(METRICS_REPORTS_PATH + 'summary.csv', index=False)
+    global_metrics.to_csv(METRICS_REPORTS_PATH + 'global_metrics.csv', index=False)
 
     return segments_metrics, summary, global_metrics

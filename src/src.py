@@ -20,9 +20,10 @@ def procesar_imgs(path_in, path_out, train_flow = TRAIN_FLOW): #TODO agregar cor
     if DEBUG:
         with open(f'{path_out}/data_block.pkl', 'wb') as f:
             pickle.dump(data, f)
+        print(f'Se creo el archivo de volcado de data_blocks --> {path_out}/data_block.pkl')
+
         report_file = 'data_block_train.csv' if train_flow == True else 'data_block_pred.csv'
         pd.DataFrame(data=data).to_csv(path_out + report_file, index=False)
-
         print(f'Se creo el archivo de reporte --> {report_file}')
 
     process(data, train_flow)
