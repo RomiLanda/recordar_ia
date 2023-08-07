@@ -7,11 +7,15 @@ METRICS_REPORTS_PATH = "src/models/metrics/"
 
 def add_ocr_segments(data_item):
     for idx, segmento in enumerate(data_item['segments']):
+        if segmento['label'] == 'Fotografía':
+            continue
         ocr_by_segment = {
                         'id_line_group': [],
                         'text': []
                         }
         for token_box in data_item['token_boxes']:
+            if token_box['text'] == 'photo_box':
+                continue
             if token_box['box_polygon'].intersects(segmento['polygon']):
                 ocr_by_segment['id_line_group'].append(token_box['id_line_group'])
                 ocr_by_segment['text'].append(token_box['text'])
@@ -76,9 +80,12 @@ def text_evaluation(data_block):
         data_item = add_ocr_segments(data_item)
         print(f"Evaluando OCR de {data_item['file_path']}")
         for segmento in data_item['segments']:
+            if segmento['label'] == 'Fotografía':
+                continue
             segmento.update(segment_eval(segmento['true_text'], segmento['ocr_text']))
 
     segments_metrics = pd.DataFrame(flatten(data_item['segments'] for data_item in data_block))[EVAL_COLUMNS]
+    segments_metrics = segments_metrics[segments_metrics['label'] != 'Fotografía']
 
     summary = (
         segments_metrics[["label", "wer", "mer", "wil", "wip", "cer"]]
