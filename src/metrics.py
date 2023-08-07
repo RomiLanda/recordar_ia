@@ -6,7 +6,6 @@ from shapely.geometry import box as shapely_box
 METRICS_REPORTS_PATH = "src/models/metrics/"
 
 def add_ocr_segments(data_item):
-
     for idx, segmento in enumerate(data_item['segments']):
         ocr_by_segment = {
                         'id_line_group': [],
@@ -36,15 +35,19 @@ def get_metrics(truth: str, hypothesis: str) -> tuple:
 
 def segment_eval(annotations: str, text: str) -> dict:
     metrics = {
-        "wer" : 0.0,
-        "mer" : 0.0,
-        "wil" : 0.0,
-        "wip" : 0.0,
-        "cer" : 0.0,
+        "wer" : -1,
+        "mer" : -1,
+        "wil" : -1,
+        "wip" : -1,
+        "cer" : -1,
     }
 
-    if not annotations or not text:
-        return metrics
+    if ('photo_box' in text):
+        if not annotations:
+            return metrics
+        else:
+            text = text.replace('photo_box', '')
+
 
     wer, mer, wil, wip, cer = get_metrics(annotations, text)
 
@@ -57,6 +60,7 @@ def segment_eval(annotations: str, text: str) -> dict:
     return metrics
 
 EVAL_COLUMNS = [
+    "file",
     "label",
     "true_text",
     "ocr_text",
@@ -70,6 +74,7 @@ EVAL_COLUMNS = [
 def text_evaluation(data_block):
     for data_item in data_block:
         data_item = add_ocr_segments(data_item)
+        print(f"Evaluando OCR de {data_item['file_path']}")
         for segmento in data_item['segments']:
             segmento.update(segment_eval(segmento['true_text'], segmento['ocr_text']))
 
