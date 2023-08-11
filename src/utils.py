@@ -31,14 +31,14 @@ def cv2pil(cv_image: np.ndarray) -> Image:
 # -------- LABELS------------
 
 def get_label_token(polygon_token, data_item):
-    label_candidates = {'etiqueta': -1, 'perc': -1, 'label': 'Indefinido', 'annotations': ''}
+    label_candidates = {'etiqueta': -1, 'perc': -1, 'label': 'Indefinido'}
     i=0
     for segmento in data_item['segments']:
         if polygon_token.intersects(segmento['polygon']):
             i+=1
             perc = polygon_token.intersection(segmento['polygon']).area
             if (label_candidates['perc'] < perc):
-                label_candidates = {'label': segmento['label'],'annotations': segmento['content'], 'perc': perc}
+                label_candidates = {'label': segmento['label'], 'perc': perc}
 
     return label_candidates
 
@@ -47,8 +47,7 @@ def get_label_tokens(data_item):
     for token_box in data_item['token_boxes']:
         info_candidates = get_label_token(token_box['box_polygon'],data_item)
         token_box['label'] = info_candidates['label']
-        token_box['annotations'] = info_candidates['annotations']
-    
+            
     return data_item
 
 

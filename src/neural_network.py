@@ -15,7 +15,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from .nn_model import Model
 from .utils import save_json, load_json
 from .training_utils import split_dataset, set_label_map, get_pg_graphs, MONITOR_MAP
-from .metrics import model_evaluation
+from .metrics import text_evaluation
 
 from .tree_model import train_tree_model, save_tree
 
@@ -36,16 +36,19 @@ def train_model(data_block, train_flow: bool, save_path: str):
     train, val, test = split_dataset(data_block)
     
     # Decision tree classifier training and saving
+    print('Entrenando Decision Tree Classifier...')
     save_tree(train_tree_model(train, test))
 
     label_map, inv_label_map = set_label_map(data_block)
 
+    print('Generando grafos...')
     pg_graph_train = get_pg_graphs(train, label_map, train_flow)
     pg_graph_val = get_pg_graphs(val, label_map, train_flow)
 
     n_classes = len(label_map)
     n_features = pg_graph_train[0].x.shape[1]
 
+    print('Entrenando red convolucional de grafos...')
     train_loader = DataLoader(
         pg_graph_train, batch_size=BATCH_SIZE, shuffle=False, num_workers = 16
     )
@@ -223,10 +226,12 @@ def write_output_json(data_block):
 
 def process(data_block, train_flow: bool):
     if train_flow:
+        print('Resultados de métricas de OCR:')
+        print(text_evaluation(data_block))
         _, _, test = train_model(data_block, train_flow, SAVE_MODEL_PATH)
         predict_data_block = predict(test, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
+        print('Resultados de métricas de etiquetado:')
         show_predictions(predict_data_block)
-        print(model_evaluation(predict_data_block))
 
     else:
         predict_data_block = predict(data_block, SAVE_MODEL_PATH, MODEL_FILE_NAME, train_flow)
