@@ -99,3 +99,12 @@ def vertical_filter(df_data):
     """
     mask_not_vertical = (df_data['height'] < (df_data['width'] * 2.5))
     return df_data[mask_not_vertical]
+
+
+def phantom_ocr_filter(df_data):
+    """
+    Returns dataframe without elements with abnormal size related with text_lenght
+    from pytesseract data as dataframe
+    """
+    mask_not_phantom = (df_data['width'] < (df_data['height'] * df_data['text'].str.len() * 2))
+    return df_data[mask_not_phantom]

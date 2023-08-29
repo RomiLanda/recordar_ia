@@ -1,14 +1,15 @@
 from copy import deepcopy
 from itertools import chain
-from shapely import box
+from shapely import box, geometry
 from shapely.ops import unary_union
 import cv2
+import numpy as np
 
 def clear_abnormal_ratio_photos(boxes_list):
     """
     Returns polygon list filtered by aspect ratio.
     """
-    MAX_PHOTO_ASPECT_RATIO = 5
+    MAX_PHOTO_ASPECT_RATIO = 3
     clean_boxes_list = []
     for p in boxes_list:
         x1, y1, x2, y2 = map(int, p.bounds)
@@ -16,6 +17,22 @@ def clear_abnormal_ratio_photos(boxes_list):
         h = y2 - y1
         if ((max(h, w) / min(h, w)) < MAX_PHOTO_ASPECT_RATIO):
             clean_boxes_list.append(p)
+    return clean_boxes_list
+
+def clear_abnormal_data_photos(boxes_list, image):
+    """
+    Returns polygon list filtered by data statistics.
+    """
+    MAX_MEAN_PIXELS_DATA = 200
+    clean_boxes_list = []
+
+    for p in boxes_list:
+        x1, y1, x2, y2 = map(int, p.bounds)
+        crop_image = image[y1:y2, x1:x2]
+        mean_data = np.mean(crop_image)
+        if (mean_data < MAX_MEAN_PIXELS_DATA):
+            clean_boxes_list.append(p)
+
     return clean_boxes_list
 
 
@@ -29,21 +46,21 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
     DIL_ITER=2
     K_SIZE_BLUR=(7,7)
     K_SIZE_DIL=(4,4)
+    FILL_COLOR = (255, 255, 255)
 
     polygons = []
-    image = deepcopy(image)
-    image_height, image_width, _ = image.shape
+    image = deepcopy(cv2.bitwise_not(image))
+    image_height, image_width = image.shape
     image_area = image_height * image_width
     
     for token in df_data.iterrows():
         w, h = int(token[1].width * buffer_ratio), int(token[1].height * buffer_ratio)
         x, y = int(token[1].left - (token[1].width * (buffer_ratio-1) / 2)), int(token[1].top - (token[1].height * (buffer_ratio-1) / 2))
-        cv2.rectangle(image, (x, y), (x + w, y + h), (255, 255, 255), -1)
+        cv2.rectangle(image, (x, y), (x + w, y + h), FILL_COLOR, -1)
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, K_SIZE_BLUR, 10)
+    blur = cv2.GaussianBlur(image, K_SIZE_BLUR, 10)
     thresh = cv2.threshold(blur, 250, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    dilate = cv2.dilate(thresh, cv2.getStructuringElement(cv2.MORPH_RECT, K_SIZE_DIL), iterations=DIL_ITER)
+    dilate = cv2.erode(thresh, cv2.getStructuringElement(cv2.MORPH_RECT, K_SIZE_DIL), iterations=DIL_ITER)
     contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     contours = contours[0] if len(contours) == 2 else contours[1]
@@ -54,15 +71,20 @@ def get_photo_polygons(image, df_data, buffer_ratio=1.8):
         x_max = c[c[:, :, 0].argmax()][0][0]
         y_max = c[c[:, :, 1].argmax()][0][1]
         polygons.append(box(x_min, y_min, x_max, y_max))
-
-    polygons = [p for p in polygons if (round((p.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC - 10))]
     
-    if len(polygons) > 1:
-        polygons = unary_union(polygons)
-        polygons = [p for p in list(polygons.geoms) if (round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < MAX_PHOTO_AREA_PERC)]
-
+    polygons = [p for p in polygons if ((round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC)))]
+    polygons_union = unary_union(polygons)
+    
+    if isinstance(polygons_union, geometry.multipolygon.MultiPolygon): 
+        polygons = list(polygons_union.geoms)
+        polygons = [p for p in polygons if ((round((p.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((p.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC)))]
+    elif isinstance(polygons_union, geometry.polygon.Polygon):
+        polygons = []
+        if ((round((polygons_union.area/image_area)*100, 2) > MIN_PHOTO_AREA_PERC) & (round((polygons_union.area/image_area)*100, 2) < (MAX_PHOTO_AREA_PERC))):
+            polygons.append(polygons_union)        
+    
     polygons = [box(*p.bounds) for p in polygons]
-    photo_poly_candidates = clear_abnormal_ratio_photos(polygons)
+    photo_poly_candidates = clear_abnormal_data_photos(clear_abnormal_ratio_photos(polygons), image)
 
     return photo_poly_candidates
 

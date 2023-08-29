@@ -31,7 +31,7 @@ def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
     # with open('out_data/tess_config.txt', 'w') as f:
     #     f.write(tess_config)
 
-    df_data = vertical_filter(blank_filter(df_data))
+    df_data = phantom_ocr_filter(vertical_filter(blank_filter(df_data)))
 
     if df_data.shape[0] == 0:
         print('Error: No se logró identificar ninguna palabra.')
