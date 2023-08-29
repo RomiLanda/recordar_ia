@@ -4,8 +4,10 @@ from PIL import ImageDraw
 
 from .utils import cv2pil, get_boxes_line, get_line_center
 
+OCR_DEBUG = True    # if False, turns into Label debug output images
+
 FONT = ImageFont.truetype(
-    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 10
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 14
 )
 
 def doc_debug(data_item, out_path: str, train_flow: bool):
@@ -24,15 +26,17 @@ def doc_debug(data_item, out_path: str, train_flow: bool):
         box = token_box["box"]
         n_line = token_box["id_line_group"]
         if train_flow:
-            label = token_box["label"]
-            color = "red" if label != "Indefinido" else "black"
+            text_draw = token_box["text"] if OCR_DEBUG else f'{n_line}:{token_box["label"]}'
+            align_text = 'center' if OCR_DEBUG else 'left'
+            anchor_text = 'lt' if OCR_DEBUG else 'rd'
+            color = "red" if text_draw != "Indefinido" else "black"
             draw.rectangle(box, outline=color, width=1)
             draw.text(
                 (box[0], box[1]),
-                f"{n_line}:{label}",
+                f"{text_draw}",
                 font=FONT,
-                anchor="rd",
-                align="left",
+                anchor=anchor_text,
+                align=align_text,
                 fill=color,
             )
         else:
