@@ -26,7 +26,7 @@ def load_image(img_path: str):
         imagen_cv = cv2.imread(img_path)
         data_item = {}
         data_item['file_path'] = img_path
-        data_item['img_bitmap'] = imagen_cv
+        data_item['img_bitmap'] = cv2.cvtColor(imagen_cv, cv2.COLOR_BGR2GRAY)
         data_item["image_shape"] =  {
             "image_height" : imagen_cv.shape[0], 
             "image_width" : imagen_cv.shape[1]

@@ -1,7 +1,8 @@
+import cv2
 from shapely import box
 from copy import deepcopy
 from pytesseract import image_to_data, Output
-from .utils import cv2pil, blank_filter, vertical_filter  
+from .utils import cv2pil, blank_filter, vertical_filter, phantom_ocr_filter
 from .get_photos import add_photo_token_boxes, get_photo_polygons
 
 
@@ -26,6 +27,10 @@ def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
         output_type=Output.DATAFRAME,
     )
 
+    # # Extracción de config temporal para proceso de optimización manual del ocr
+    # with open('out_data/tess_config.txt', 'w') as f:
+    #     f.write(tess_config)
+
     df_data = vertical_filter(blank_filter(df_data))
 
     if df_data.shape[0] == 0:
@@ -37,10 +42,10 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
     df_data['x2'] = df_data['left'] + df_data['width']
     df_data['y2'] = df_data['top'] + df_data['height']
     df_data['id_line_group'] = df_data.apply(lambda row:
-                                                 'id_' + 
-                                                 str(row['block_num']).zfill(3) + '_' +
-                                                 str(row['par_num']).zfill(2) + '_' +
-                                                 str(row['line_num']).zfill(5), axis=1
+                                                'id_' + 
+                                                str(row['block_num']).zfill(3) + '_' +
+                                                str(row['par_num']).zfill(2) + '_' +
+                                                str(row['line_num']).zfill(5), axis=1
                                             )
     line_groups_ids = df_data['id_line_group'].value_counts().keys().to_list()
 
@@ -82,6 +87,10 @@ def get_line_group_token_boxes(df_data) -> list[dict]:
 
     return list(token_line_groups_boxes)
 
+def image_preprocess(img):
+    img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    img = cv2.dilate(img, (2,1), iterations=1)
+    return img
 
 def apply_tesseract(
     data_item,
@@ -90,7 +99,7 @@ def apply_tesseract(
     output_path: str = "",
 ):
     data_item = deepcopy(data_item)
-    img = data_item["img_bitmap"]
+    img = image_preprocess(data_item["img_bitmap"])
     image = cv2pil(img)
     print(f"Aplicando OCR sobre archivo {data_item['file_path']} ...")
     df_data =  tesseract_word_boxes(image, tesseract_langs, tesseract_config)
