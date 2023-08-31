@@ -39,7 +39,7 @@ def doc_debug(data_item, out_path: str, train_flow: bool):
             text_draw = token_box["text"] if OCR_DEBUG else f'{n_line}:{token_box["label"]}'
             align_text = 'center' if OCR_DEBUG else 'left'
             anchor_text = 'lt' if OCR_DEBUG else 'rd'
-            color = get_color(token_box['id_line_group']) if text_draw != "Indefinido" else 'black'    
+            color = get_color(token_box['id_par_group']) if text_draw != "Indefinido" else 'black'    
             draw.rectangle(box, outline=color, width=3)
             draw.text(
                 (box[0], box[1]),
