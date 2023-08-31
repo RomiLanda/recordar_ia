@@ -106,5 +106,14 @@ def phantom_ocr_filter(df_data):
     Returns dataframe without elements with abnormal size related with text_lenght
     from pytesseract data as dataframe
     """
-    mask_not_phantom = (df_data['width'] < (df_data['height'] * df_data['text'].str.len() * 2))
+    mask_not_phantom = (df_data['width'] < (df_data['height'] * df_data['text'].str.len() * 1.5))
     return df_data[mask_not_phantom]
+
+def symbols_string_filter(df_data):
+    """
+    Returns dataframe without elements with several consecutive 
+    symbols in textfrom pytesseract data as dataframe
+    """
+    pattern = r'[^a-zA-Z0-9\s]{2,}'
+    mask_symbols = df_data['text'].str.match(pattern)
+    return df_data[~mask_symbols]

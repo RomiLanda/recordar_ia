@@ -2,7 +2,7 @@ import cv2
 from shapely import box
 from copy import deepcopy
 from pytesseract import image_to_data, Output
-from .utils import cv2pil, blank_filter, vertical_filter, phantom_ocr_filter
+from .utils import cv2pil, blank_filter, vertical_filter, phantom_ocr_filter, symbols_string_filter
 from .get_photos import add_photo_token_boxes, get_photo_polygons
 
 
@@ -31,7 +31,7 @@ def tesseract_word_boxes(image, tesseract_langs: str, tesseract_config: str):
     # with open('out_data/tess_config.txt', 'w') as f:
     #     f.write(tess_config)
 
-    df_data = phantom_ocr_filter(vertical_filter(blank_filter(df_data)))
+    df_data = symbols_string_filter(phantom_ocr_filter(vertical_filter(blank_filter(df_data))))
 
     if df_data.shape[0] == 0:
         print('Error: No se logró identificar ninguna palabra.')
